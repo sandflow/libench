@@ -1,0 +1,18 @@
+[submodule "ext/qoi"]
+	path = ext/qoi
+	url = https://github.com/phoboslab/qoi.git
+[submodule "ext/libjxl"]
+	path = ext/libjxl
+	url = https://github.com/libjxl/libjxl.git
+[submodule "ext/OpenJPH"]
+	path = ext/OpenJPH
+	url = https://github.com/aous72/OpenJPH.git
+[submodule "ext/cxxopts"]
+	path = ext/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
+[submodule "ext/stb"]
+	path = ext/stb
+	url = https://github.com/nothings/stb.git
+[submodule "ext/crypto-algorithms"]
+	path = ext/crypto-algorithms
+	url = https://github.com/B-Con/crypto-algorithms.git
