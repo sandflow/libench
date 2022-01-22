@@ -27,21 +27,31 @@ struct CodestreamContext {
 };
 
 std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
-  os << "decodeTimes";
-  for (auto t : ctx.decode_times) {
-    os << "," << ((double)t / CLOCKS_PER_SEC);
+  os << "{" << std::endl;
+
+  os << "\"decodeTimes\" : [";
+  for (const auto& t : ctx.decode_times) {
+    os << ((double)t / CLOCKS_PER_SEC);
+    if (&t != &ctx.decode_times.back()) {
+      os << ", ";
+    }
   }
-  os << std::endl;
+  os << "]," << std::endl;
 
-  os << "encodeTimes";
-  for (auto t : ctx.encode_times) {
-    os << "," << ((double)t / CLOCKS_PER_SEC);
+  os << "\"encodeTimes\" : [";
+  for (const auto& t : ctx.encode_times) {
+    os << ((double)t / CLOCKS_PER_SEC);
+    if (&t != &ctx.encode_times.back()) {
+      os << ", ";
+    }
   }
-  os << std::endl;
+  os << "]," << std::endl;
 
-  os << "imageSize," << ctx.image_sz << std::endl;
+  os << "\"imageSize\" : " << ctx.image_sz << "," << std::endl;
 
-  os << "codestreamSize," << ctx.codestream_sz << std::endl;
+  os << "\"codestreamSize\" : " << ctx.codestream_sz << "," << std::endl;
+
+  os << "}" << std::endl;
 
   return os;
 }
