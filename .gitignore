@@ -2,3 +2,8 @@ build/
 .vscode/
 bin/
 images/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
