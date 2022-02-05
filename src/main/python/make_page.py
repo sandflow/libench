@@ -1,11 +1,10 @@
 from datetime import datetime
 import os
+import os.path
 import argparse
 import json
 import typing
-import subprocess
 from dataclasses import dataclass, field
-import os.path
 import matplotlib.pyplot as plt
 import chevron
 
@@ -15,11 +14,12 @@ class Codec:
   name: str
   encode_time: float
   decode_time: float
-  coding_efficiency: float
+  coded_size: float
 
 @dataclass
 class Image:
   name: str
+  size: int = 0
   codecs : typing.Iterable[Codec] = field(default_factory=list)
 
 def build(build_dir, images: typing.Iterable[Image]):
@@ -38,20 +38,20 @@ def build(build_dir, images: typing.Iterable[Image]):
     rendered_image["name"] = image.name
 
     # decode plot
-    efficiencies = tuple(map(lambda x : x.coding_efficiency * 100, image.codecs))
+    efficiencies = tuple(map(lambda x : x.coded_size/1000, image.codecs))
     decode_times = tuple(map(lambda y : y.decode_time * 1000, image.codecs))
     decode_plot_fn = image.name + "_decode.svg"
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(6, 6))
     ax.scatter(efficiencies, decode_times)
 
     for i, codec in enumerate(image.codecs):
       ax.annotate(codec.name, (efficiencies[i], decode_times[i]))
-    plt.tick_params(which='both', bottom=False, top=False, left=False, right=False)
+    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
     ax.grid(True)
-    ax.set(xlim=(0, 100))
-    ax.set_ylabel("Decoding speed (ms)")
-    ax.set_xlabel("Coding efficiency (%)")
-    ax.set_title("Decoding performance")
+    ax.set(xlim=(0, None))
+    ax.set_ylabel("Decode time (ms)")
+    ax.set_xlabel("Coded size (kiB)")
+    ax.set_title("Decode performance")  
     plt.show()
     plt.savefig(os.path.join(build_dir, decode_plot_fn))
 
@@ -60,17 +60,17 @@ def build(build_dir, images: typing.Iterable[Image]):
     # encode plot
     encode_times = tuple(map(lambda y : y.encode_time * 1000, image.codecs))
     encode_plot_fn = image.name + "_encode.svg"
-    _, ax = plt.subplots()
+    _, ax = plt.subplots(figsize=(6, 6))
     ax.scatter(efficiencies, encode_times)
 
     for i, codec in enumerate(image.codecs):
       ax.annotate(codec.name, (efficiencies[i], encode_times[i]))
-    plt.tick_params(which='both', bottom=False, top=False, left=False, right=False)
+    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
     ax.grid(True)
-    ax.set(xlim=(0, 100))
-    ax.set_ylabel("Encoding speed (ms)")
-    ax.set_xlabel("Coding efficiency (%)")
-    ax.set_title("Encoding performance")
+    ax.set(xlim=(0, None))
+    ax.set_ylabel("Encode time (ms)")
+    ax.set_xlabel("Coded size (kiB)")
+    ax.set_title("Encode performance")
     plt.show()
     plt.savefig(os.path.join(build_dir, encode_plot_fn))
 
@@ -83,7 +83,7 @@ def build(build_dir, images: typing.Iterable[Image]):
         "name": codec.name,
         "encode_time": codec.encode_time * 1000,
         "decode_time": codec.decode_time * 1000,
-        "coding_efficiency" : round(codec.coding_efficiency * 100)
+        "coded_size" : round(codec.coded_size / 1000)
     })
 
     results["images"].append(rendered_image)
@@ -122,9 +122,10 @@ def main():
           name=codec_name,
           encode_time=sum(result["encodeTimes"])/len(result["encodeTimes"]),
           decode_time=sum(result["decodeTimes"])/len(result["decodeTimes"]),
-          coding_efficiency=result["codestreamSize"]/result["imageSize"]
+          coded_size=result["codestreamSize"]
         )
       )
+      image.size=result["imageSize"]
 
     images.append(image)
 

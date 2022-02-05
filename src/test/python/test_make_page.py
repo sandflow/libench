@@ -14,18 +14,20 @@ class MakePageTest(unittest.TestCase):
     images = (
       make_page.Image(
         name = "Sample PNG RGBA image",
+        size=64000, 
         codecs = (
-          make_page.Codec(name="HT", coding_efficiency=0.5, encode_time=0.5, decode_time=0.5),
-          make_page.Codec(name="J2K1", coding_efficiency=0.55, encode_time=0.1, decode_time=0.1),
-          make_page.Codec(name="JPG", coding_efficiency=0.65, encode_time=0.3, decode_time=0.3)
+          make_page.Codec(name="HT", coded_size=12000, encode_time=0.5, decode_time=0.5),
+          make_page.Codec(name="J2K1", coded_size=10000, encode_time=0.1, decode_time=0.1),
+          make_page.Codec(name="PNG", coded_size=14000, encode_time=0.3, decode_time=0.3)
         )
       ),
       make_page.Image(
-        name = "Sample TIFF image",
+        name="Sample TIFF image",
+        size=20000000, 
         codecs = (
-          make_page.Codec(name="HT", coding_efficiency=0.5, encode_time=0.8, decode_time=0.9),
-          make_page.Codec(name="J2K1", coding_efficiency=0.52, encode_time=0.12, decode_time=0.12),
-          make_page.Codec(name="JPG", coding_efficiency=0.6, encode_time=0.2, decode_time=0.3)
+          make_page.Codec(name="HT", coded_size=10000000, encode_time=0.8, decode_time=0.9),
+          make_page.Codec(name="J2K1", coded_size=9000000, encode_time=0.12, decode_time=0.12),
+          make_page.Codec(name="PNG", coded_size=13000000, encode_time=0.2, decode_time=0.3)
         )
       )
     )
