@@ -14,7 +14,8 @@ class MakePageTest(unittest.TestCase):
     images = (
       make_page.Image(
         name = "Sample PNG RGBA image",
-        size=64000, 
+        size=64000,
+        preview_url="src/test/resources/rgba.png",
         codecs = (
           make_page.Codec(name="HT", coded_size=12000, encode_time=0.5, decode_time=0.5),
           make_page.Codec(name="J2K1", coded_size=10000, encode_time=0.1, decode_time=0.1),
@@ -23,7 +24,8 @@ class MakePageTest(unittest.TestCase):
       ),
       make_page.Image(
         name="Sample TIFF image",
-        size=20000000, 
+        size=20000000,
+        preview_url="src/test/resources/rgba.png", 
         codecs = (
           make_page.Codec(name="HT", coded_size=10000000, encode_time=0.8, decode_time=0.9),
           make_page.Codec(name="J2K1", coded_size=9000000, encode_time=0.12, decode_time=0.12),

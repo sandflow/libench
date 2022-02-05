@@ -13,4 +13,4 @@ chevron = "*"
 python_version = "3"
 
 [dev-packages]
-pylint = "==2.12.2"
+pylint = "==2.11.1"

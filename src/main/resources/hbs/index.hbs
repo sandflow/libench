@@ -24,9 +24,30 @@
       <h2>{{name}}</h2>
       <img src="{{encode_plot_fn}}" />
       <img src="{{decode_plot_fn}}" />
-      <div class="row justify-content-center">
-        <div class="col-auto">
-          <table class="w-30 table table-hover">
+      <div class="row">
+
+        <div class="col w-10">
+          <img src="{{preview_url}}" />
+        </div>
+
+        <div class="col w-30">
+          <table class="table table-hover">
+            <thead class="text-center thead-light">
+              <tr>
+                <th colspan=2>Image characteristics</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Size (kiB)</th>
+                <td>{{size}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col w-30">
+          <table class="table table-hover">
             <thead class="text-center thead-light">
               <tr>
                 <th>Codec</th>
@@ -47,6 +68,7 @@
             </tbody>
           </table>
         </div>
+
       </div>
     </section>
     {{/images}}

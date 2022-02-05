@@ -5,12 +5,14 @@ import argparse
 import json
 import typing
 from dataclasses import dataclass, field
+import shutil
 import matplotlib.pyplot as plt
 import chevron
 
 
 @dataclass
 class Codec:
+  """Codec-specific results"""
   name: str
   encode_time: float
   decode_time: float
@@ -18,7 +20,9 @@ class Codec:
 
 @dataclass
 class Image:
+  """Image information"""
   name: str
+  preview_url: str
   size: int = 0
   codecs : typing.Iterable[Codec] = field(default_factory=list)
 
@@ -36,7 +40,14 @@ def build(build_dir, images: typing.Iterable[Image]):
     rendered_image = {}
 
     rendered_image["name"] = image.name
+    rendered_image["size"] = image.size
 
+    rendered_image["preview_url"] = os.path.basename(image.preview_url)
+    shutil.copyfile(
+      image.preview_url,
+      os.path.join(build_dir, rendered_image["preview_url"])
+    )
+    
     # decode plot
     efficiencies = tuple(map(lambda x : x.coded_size/1000, image.codecs))
     decode_times = tuple(map(lambda y : y.decode_time * 1000, image.codecs))
@@ -94,7 +105,7 @@ def build(build_dir, images: typing.Iterable[Image]):
     with open(os.path.join(build_dir, "index.html"), "w", encoding="utf-8") as index_file:
       index_file.write(chevron.render(template_file, results))
 
-def main():
+def _main():
   BUILD_DIR = "build/python_test"
 
   os.makedirs(BUILD_DIR, exist_ok=True)
@@ -113,7 +124,10 @@ def main():
   for image in image_list:
     image_path = os.path.join(image_root_dir, image['path'])
 
-    image = Image(name=os.path.basename(image_path))
+    image = Image(
+      name=os.path.basename(image_path),
+      preview_url=os.path.join(image_root_dir, image['preview'])
+    )
 
     for codec_name in ("ojph", "jxl", "qoi"):
       result = json.load(os.popen(f"./build/libench {codec_name} {image_path}"))
@@ -133,4 +147,4 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  _main()
