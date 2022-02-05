@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
 
   os << "\"imageSize\" : " << ctx.image_sz << "," << std::endl;
 
-  os << "\"codestreamSize\" : " << ctx.codestream_sz << "," << std::endl;
+  os << "\"codestreamSize\" : " << ctx.codestream_sz  << std::endl;
 
   os << "}" << std::endl;
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   options.add_options()("dir", "Codesteeam directory path",
                         cxxopts::value<std::string>())(
       "r,repetitions", "Codesteeam directory path",
-      cxxopts::value<int>()->default_value("20"))(
+      cxxopts::value<int>()->default_value("5"))(
       "file", "Input image", cxxopts::value<std::string>())(
       "codec", "Coded to profile", cxxopts::value<std::string>());
 

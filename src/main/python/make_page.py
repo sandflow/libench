@@ -95,23 +95,41 @@ def build(build_dir, images: typing.Iterable[Image]):
       index_file.write(chevron.render(template_file, results))
 
 def main():
+  BUILD_DIR = "build/python_test"
+
+  os.makedirs(BUILD_DIR, exist_ok=True)
+
   parser = argparse.ArgumentParser(description="Generate static web page with lossless coding results.")
   parser.add_argument("manifest_path", type=str, help="Path of the manifest file")
   args = parser.parse_args()
 
-  image_list = json.load(args["manifest_path"])
+  with open(args.manifest_path, encoding="utf-8") as f:
+    image_list = json.load(f)
+
+  image_root_dir = os.path.dirname(args.manifest_path)
+
+  images = []
 
   for image in image_list:
-    pass
+    image_path = os.path.join(image_root_dir, image['path'])
 
-  stream = os.popen("./build/libench ojph images/rgba.png")
-  output = stream.read()
-  print(output)
+    image = Image(name=os.path.basename(image_path))
 
-  fig, ax = plt.subplots()
-  ax.scatter([1,2], [3,4])
-  plt.show()
-  plt.savefig('build/a.png')
+    for codec_name in ("ojph", "jxl", "qoi"):
+      result = json.load(os.popen(f"./build/libench {codec_name} {image_path}"))
+      image.codecs.append(
+        Codec(
+          name=codec_name,
+          encode_time=sum(result["encodeTimes"])/len(result["encodeTimes"]),
+          decode_time=sum(result["decodeTimes"])/len(result["decodeTimes"]),
+          coding_efficiency=result["codestreamSize"]/result["imageSize"]
+        )
+      )
 
-if __name__ == "main":
+    images.append(image)
+
+  build(BUILD_DIR, images)
+
+
+if __name__ == "__main__":
   main()

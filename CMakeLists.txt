@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.2)
 
 project(lossless-image-benchmark)
 
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+
 # OpenJPH support
 
 add_subdirectory(ext/OpenJPH)
@@ -49,6 +51,7 @@ target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless)
 enable_testing()
 
 add_test(NAME "ojph" COMMAND libench ojph ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
-add_test(NAME "qoi" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
 add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
 add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)

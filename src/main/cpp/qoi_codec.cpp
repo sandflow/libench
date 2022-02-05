@@ -50,7 +50,9 @@ libench::CodestreamBuffer libench::QOIEncoder::encode8(const uint8_t* pixels,
  * QOIDecoder
  */
 
-libench::QOIDecoder::QOIDecoder(){};
+libench::QOIDecoder::QOIDecoder(){
+  this->pb_.pixels = NULL;
+};
 
 libench::PixelBuffer libench::QOIDecoder::decodeRGB8(const uint8_t* codestream,
                                                      size_t size) {
