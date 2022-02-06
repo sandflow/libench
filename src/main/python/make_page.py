@@ -22,14 +22,24 @@ class Codec:
 class Image:
   """Image information"""
   name: str
-  preview_url: str
+  preview_path: str
+  src_path: str
   size: int = 0
   codecs : typing.Iterable[Codec] = field(default_factory=list)
 
+def _link_overwrite(src, dst):
+  if os.path.exists(dst):
+    os.remove(dst)
+  os.link(src, dst)
+
+def _apply_common_style(ax):
+    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
+    ax.grid(True)
+    ax.set(xlim=(0, None))
+
 def build(build_dir, images: typing.Iterable[Image]):
 
-  # render image results
-
+  # build input to template engine
   results = {
     "date": datetime.now().isoformat(),
     "version": "unknown",
@@ -37,67 +47,70 @@ def build(build_dir, images: typing.Iterable[Image]):
   }
 
   for image in images:
-    rendered_image = {}
 
-    rendered_image["name"] = image.name
-    rendered_image["size"] = image.size
+    image_results = {
+      "name" : image.name,
+      "size" : image.size,
+      "preview_url": os.path.basename(image.preview_path),
+      "src_url": os.path.basename(image.src_path)
+    }
 
-    rendered_image["preview_url"] = os.path.basename(image.preview_url)
-    shutil.copyfile(
-      image.preview_url,
-      os.path.join(build_dir, rendered_image["preview_url"])
-    )
+    # preview image
+    _link_overwrite(image.preview_path, os.path.join(build_dir, image_results["preview_url"]))
+
+    # source image
+    _link_overwrite(image.src_path, os.path.join(build_dir, image_results["src_url"]))
     
+    image_sizes = tuple(map(lambda x : x.coded_size/1000, image.codecs))
+
     # decode plot
-    efficiencies = tuple(map(lambda x : x.coded_size/1000, image.codecs))
     decode_times = tuple(map(lambda y : y.decode_time * 1000, image.codecs))
     decode_plot_fn = image.name + "_decode.svg"
     _, ax = plt.subplots(figsize=(6, 6))
-    ax.scatter(efficiencies, decode_times)
 
+    ax.scatter(image_sizes, decode_times)
     for i, codec in enumerate(image.codecs):
-      ax.annotate(codec.name, (efficiencies[i], decode_times[i]))
-    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
-    ax.grid(True)
-    ax.set(xlim=(0, None))
+      ax.annotate(codec.name, (image_sizes[i], decode_times[i]))
+
+    _apply_common_style(ax)
     ax.set_ylabel("Decode time (ms)")
     ax.set_xlabel("Coded size (kiB)")
     ax.set_title("Decode performance")  
     plt.show()
     plt.savefig(os.path.join(build_dir, decode_plot_fn))
 
-    rendered_image["decode_plot_fn"] = decode_plot_fn
+    image_results["decode_plot_fn"] = decode_plot_fn
 
     # encode plot
     encode_times = tuple(map(lambda y : y.encode_time * 1000, image.codecs))
     encode_plot_fn = image.name + "_encode.svg"
     _, ax = plt.subplots(figsize=(6, 6))
-    ax.scatter(efficiencies, encode_times)
 
+    ax.scatter(image_sizes, encode_times)
     for i, codec in enumerate(image.codecs):
-      ax.annotate(codec.name, (efficiencies[i], encode_times[i]))
-    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
-    ax.grid(True)
-    ax.set(xlim=(0, None))
+      ax.annotate(codec.name, (image_sizes[i], encode_times[i]))
+
+    _apply_common_style(ax)
     ax.set_ylabel("Encode time (ms)")
     ax.set_xlabel("Coded size (kiB)")
     ax.set_title("Encode performance")
     plt.show()
     plt.savefig(os.path.join(build_dir, encode_plot_fn))
 
-    rendered_image["encode_plot_fn"] = encode_plot_fn
+    image_results["encode_plot_fn"] = encode_plot_fn
 
-    rendered_image["codecs"] = []
+    # codec results
+    image_results["codecs"] = []
 
     for codec in image.codecs:
-      rendered_image["codecs"].append({
+      image_results["codecs"].append({
         "name": codec.name,
         "encode_time": codec.encode_time * 1000,
         "decode_time": codec.decode_time * 1000,
         "coded_size" : round(codec.coded_size / 1000)
     })
 
-    results["images"].append(rendered_image)
+    results["images"].append(image_results)
 
   # apply template
 
@@ -107,6 +120,7 @@ def build(build_dir, images: typing.Iterable[Image]):
 
 def _main():
   BUILD_DIR = "build/python_test"
+  LIBENCH_BIN_PATH = "./build/libench"
 
   os.makedirs(BUILD_DIR, exist_ok=True)
 
@@ -122,15 +136,15 @@ def _main():
   images = []
 
   for image in image_list:
-    image_path = os.path.join(image_root_dir, image['path'])
 
     image = Image(
-      name=os.path.basename(image_path),
-      preview_url=os.path.join(image_root_dir, image['preview'])
+      name=os.path.basename(image['path']),
+      src_path=os.path.join(image_root_dir, image['path']),
+      preview_path=os.path.join(image_root_dir, image['preview'])
     )
 
     for codec_name in ("ojph", "jxl", "qoi"):
-      result = json.load(os.popen(f"./build/libench {codec_name} {image_path}"))
+      result = json.load(os.popen(f"{LIBENCH_BIN_PATH} {codec_name} {image.src_path}"))
       image.codecs.append(
         Codec(
           name=codec_name,
