@@ -5,7 +5,6 @@ import argparse
 import json
 import typing
 from dataclasses import dataclass, field
-import shutil
 import matplotlib.pyplot as plt
 import chevron
 
@@ -30,12 +29,12 @@ class Image:
 def _link_overwrite(src, dst):
   if os.path.exists(dst):
     os.remove(dst)
-  os.link(src, dst)
+  os.symlink(src, dst)
 
-def _apply_common_style(ax):
-    ax.tick_params(which='both', bottom=False, top=False, left=False, right=False)
-    ax.grid(True)
-    ax.set(xlim=(0, None))
+def _apply_common_style(axes):
+  axes.tick_params(which='both', bottom=False, top=False, left=False, right=False)
+  axes.grid(True)
+  axes.set(xlim=(0, None))
 
 def build(build_dir, images: typing.Iterable[Image]):
 
@@ -119,14 +118,13 @@ def build(build_dir, images: typing.Iterable[Image]):
       index_file.write(chevron.render(template_file, results))
 
 def _main():
-  BUILD_DIR = "build/python_test"
-  LIBENCH_BIN_PATH = "./build/libench"
-
-  os.makedirs(BUILD_DIR, exist_ok=True)
-
   parser = argparse.ArgumentParser(description="Generate static web page with lossless coding results.")
   parser.add_argument("manifest_path", type=str, help="Path of the manifest file")
+  parser.add_argument("build_path", type=str, help="Path of the build directory")
+  parser.add_argument("--bin_path", type=str, default="./build/libench", help="Path of the libench executable")
   args = parser.parse_args()
+
+  os.makedirs(args.build_path, exist_ok=True)
 
   with open(args.manifest_path, encoding="utf-8") as f:
     image_list = json.load(f)
@@ -144,7 +142,7 @@ def _main():
     )
 
     for codec_name in ("ojph", "jxl", "qoi"):
-      result = json.load(os.popen(f"{LIBENCH_BIN_PATH} {codec_name} {image.src_path}"))
+      result = json.load(os.popen(f"{args.bin_path} {codec_name} {image.src_path}"))
       image.codecs.append(
         Codec(
           name=codec_name,
@@ -157,8 +155,7 @@ def _main():
 
     images.append(image)
 
-  build(BUILD_DIR, images)
-
+  build(args.build_path, images)
 
 if __name__ == "__main__":
   _main()
