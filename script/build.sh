@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -x
+set -e
+
 APP_DIR=~
 IMAGES_DIR=$APP_DIR/images/
 IMAGES_S3_BUCKET=s3://libench/images
@@ -15,7 +18,7 @@ git clone --recurse-submodules $CODE_REPO $CODE_DIR
 # initialize python
 
 cd $CODE_DIR
-pipenv install
+pipenv install --system
 
 # build libench
 
@@ -28,12 +31,12 @@ make -j 8
 
 mkdir -p $IMAGES_DIR
 cd $IMAGES_DIR
-aws s3 --recursive $IMAGES_S3_BUCKET .
+aws s3 sync $IMAGES_S3_BUCKET .
 
 # run benchmark
 
 cd $CODE_DIR
-pipenv run python src/main/python/make_page.py $IMAGES_DIR/manifest.json $BUILD_DIR/www
+python3 src/main/python/make_page.py $IMAGES_DIR/manifest.json $BUILD_DIR/www
 
 # upload website
 
