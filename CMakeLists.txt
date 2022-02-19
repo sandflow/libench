@@ -4,6 +4,19 @@ project(lossless-image-benchmark)
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
+# Kakadu SDK support
+
+find_path(KDU_INCLUDE_DIR kdu_args.h PATH_SUFFIXES kakadu)
+find_library(KDU_LIBRARY libkdu)
+
+if(KDU_INCLUDE_DIR AND KDU_LIBRARY)
+  set(KDU_PRESENT 1)
+  message("Kakadu SDK found: ${KDU_LIBRARY} and ${KDU_INCLUDE_DIR}")
+  include_directories(${KDU_INCLUDE_DIR})
+else()
+  message("Kakadu SDK not found.")
+endif()
+
 # OpenJPH support
 
 add_subdirectory(ext/OpenJPH)
@@ -43,8 +56,16 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 # main executable
 
-add_executable(libench src/main/cpp/main.cpp src/main/cpp/ojph_codec.cpp src/main/cpp/qoi_codec.cpp src/main/cpp/jxl_codec.cpp)
-target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless)
+file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
+add_executable(libench ${LIBENCH_SRC_FILES})
+target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+
+#if(1)
+#  message("Including Kakadu SDK: ${KDU_LIBRARY}")
+#  target_compile_definitions(libench PRIVATE KDU_PRESENT=${KDU_PRESENT})
+#
+#  target_link_libraries(libench ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+#endif()
 
 # tests
 
@@ -55,3 +76,4 @@ add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resou
 add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
 add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
 add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
+add_test(NAME "kdu-ht" COMMAND libench kduht ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)

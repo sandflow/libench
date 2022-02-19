@@ -11,6 +11,7 @@ extern "C" {
 #include "jxl_codec.h"
 #include "ojph_codec.h"
 #include "qoi_codec.h"
+#include "kduht_codec.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
@@ -82,6 +83,9 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "jxl") {
     encoder.reset(new libench::JXLEncoder());
     decoder.reset(new libench::JXLDecoder());
+  } else if (result["codec"].as<std::string>() == "kduht") {
+    encoder.reset(new libench::KDUHTEncoder());
+    decoder.reset(new libench::KDUHTDecoder());
   } else {
     throw std::runtime_error("Unknown encoder");
   }
