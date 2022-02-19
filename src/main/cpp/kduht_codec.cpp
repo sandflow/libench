@@ -40,16 +40,14 @@ libench::CodestreamBuffer libench::KDUHTEncoder::encode8(const uint8_t* pixels,
   siz.set(Sdims, 0, 1, static_cast<int>(width));
   siz.set(Sprecision, 0, 0, 8);
   siz.set(Ssigned, 0, 0, false);
-
-  kdu_params& siz_ref = siz;
-
-  siz_ref.finalize();
+  static_cast<kdu_params&>(siz).finalize();
 
   this->out_.close();
+  
   kdu_codestream codestream;
 
   codestream.create(&siz, &this->out_);
-  codestream.access_siz()->parse_string("Creversible=yes");
+  codestream.access_siz()->access_cluster(COD_params)->set(Creversible, 0, 0, true);
   codestream.access_siz()->finalize_all();
 
   kdu_stripe_compressor compressor;
@@ -102,11 +100,10 @@ libench::PixelBuffer libench::KDUHTDecoder::decode8(const uint8_t* codestream,
   this->pixels_.resize(width * height * num_comps);
 
   int stripe_heights[4] = {height, height, height, height};
-  /*int sample_offsets[4] = {num_comps, num_comps, num_comps, num_comps};*/
 
   d.start(c);
 
-  d.pull_stripe(this->pixels_.data(), stripe_heights/*, sample_offsets*/);
+  d.pull_stripe(this->pixels_.data(), stripe_heights);
 
   d.finish();
 
