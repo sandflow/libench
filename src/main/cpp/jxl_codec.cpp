@@ -97,8 +97,7 @@ libench::CodestreamBuffer libench::JXLEncoder::encodeRGBA8(
     uint32_t height) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height,
-                                      &this->cb_.codestream);
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, 7, &this->cb_.codestream);
 
   return this->cb_;
 }

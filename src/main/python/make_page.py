@@ -55,10 +55,11 @@ def build(build_dir, images: typing.Iterable[Image]):
     }
 
     # preview image
-    _link_overwrite(image.preview_path, os.path.join(build_dir, image_results["preview_url"]))
+    _link_overwrite(os.path.abspath(image.preview_path), os.path.join(build_dir, image_results["preview_url"]))
 
     # source image
-    _link_overwrite(image.src_path, os.path.join(build_dir, image_results["src_url"]))
+    if image.src_path != image.preview_path:
+      _link_overwrite(os.path.abspath(image.src_path), os.path.join(build_dir, image_results["src_url"]))
     
     image_sizes = tuple(map(lambda x : x.coded_size/1000, image.codecs))
 
@@ -141,7 +142,7 @@ def _main():
       preview_path=os.path.join(image_root_dir, image['preview'])
     )
 
-    for codec_name in ("ojph", "jxl", "qoi"):
+    for codec_name in ("ojph", "jxl", "qoi", "kduht"):
       result = json.load(os.popen(f"{args.bin_path} {codec_name} {image.src_path}"))
       image.codecs.append(
         Codec(

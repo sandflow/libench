@@ -22,6 +22,7 @@ class mem_compressed_target : public kdu_compressed_target {
 
   bool write(const kdu_byte* buf, int num_bytes) {
     std::copy(buf, buf + num_bytes, std::back_inserter(this->buf));
+    return true;
   }
 
   void set_target_size(kdu_long num_bytes) { this->buf.reserve(num_bytes); }

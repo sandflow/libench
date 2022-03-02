@@ -48,6 +48,8 @@ libench::CodestreamBuffer libench::KDUHTEncoder::encode8(const uint8_t* pixels,
 
   codestream.create(&siz, &this->out_);
   codestream.access_siz()->access_cluster(COD_params)->set(Creversible, 0, 0, true);
+    codestream.access_siz()->access_cluster(COD_params)->set(Cmodes, 0, 0, Cmodes_HT);
+
   codestream.access_siz()->finalize_all();
 
   kdu_stripe_compressor compressor;
