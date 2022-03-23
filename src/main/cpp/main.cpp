@@ -97,6 +97,7 @@ int main(int argc, char* argv[]) {
   int height;
   int num_comps;
 
+
   unsigned char* data =
       stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
 
@@ -105,7 +106,8 @@ int main(int argc, char* argv[]) {
   }
 
   if (num_comps < 3 || num_comps > 4) {
-    throw std::runtime_error("Only RGB or RGBA images are supported");
+    std::cerr << "Only RGB or RGBA images are supported";
+    return 1;
   }
 
   int repetitions = result["repetitions"].as<int>();

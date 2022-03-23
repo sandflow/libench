@@ -20,73 +20,9 @@ libench::JXLEncoder::JXLEncoder() {
 libench::CodestreamBuffer libench::JXLEncoder::encodeRGB8(const uint8_t* pixels,
                                                           uint32_t width,
                                                           uint32_t height) {
-  auto enc = JxlEncoderMake(nullptr);
-  auto runner = JxlThreadParallelRunnerMake(
-      nullptr, JxlThreadParallelRunnerDefaultNumWorkerThreads());
-  if (JXL_ENC_SUCCESS != JxlEncoderSetParallelRunner(enc.get(),
-                                                     JxlThreadParallelRunner,
-                                                     runner.get())) {
-    throw std::runtime_error("JxlEncoderSetParallelRunner failed\n");
-  }
+  free(this->cb_.codestream);
 
-  JxlBasicInfo basic_info;
-  JxlEncoderInitBasicInfo(&basic_info);
-  basic_info.xsize = width;
-  basic_info.ysize = height;
-  basic_info.uses_original_profile = JXL_TRUE;
-
-  if (JXL_ENC_SUCCESS != JxlEncoderSetBasicInfo(enc.get(), &basic_info)) {
-    throw std::runtime_error("JxlEncoderSetBasicInfo failed\n");
-  }
-
-  JxlColorEncoding color_encoding = {};
-  JxlColorEncodingSetToSRGB(&color_encoding, false);
-  if (JXL_ENC_SUCCESS !=
-      JxlEncoderSetColorEncoding(enc.get(), &color_encoding)) {
-    throw std::runtime_error("JxlEncoderSetColorEncoding failed\n");
-  }
-
-  JxlEncoderOptions* options = JxlEncoderOptionsCreate(enc.get(), nullptr);
-
-  if (JXL_ENC_SUCCESS != JxlEncoderOptionsSetLossless(options, true)) {
-    throw std::runtime_error("LibJXL: JxlEncoderOptionsSetLossless() failed.");
-  }
-
-  JxlPixelFormat pixel_format = {3, JXL_TYPE_UINT8, JXL_NATIVE_ENDIAN, 0};
-
-  if (JXL_ENC_SUCCESS != JxlEncoderAddImageFrame(options, &pixel_format, pixels,
-                                                 width * height * 3)) {
-    throw std::runtime_error("JxlEncoderAddImageFrame failed\n");
-  }
-  JxlEncoderCloseInput(enc.get());
-
-  this->cb_.size = 64;
-  this->cb_.codestream =
-      (uint8_t*)realloc(this->cb_.codestream, this->cb_.size);
-
-  uint8_t* next_out = this->cb_.codestream;
-  size_t avail_out = this->cb_.size - (next_out - this->cb_.codestream);
-  JxlEncoderStatus process_result = JXL_ENC_NEED_MORE_OUTPUT;
-
-  while (process_result == JXL_ENC_NEED_MORE_OUTPUT) {
-    process_result = JxlEncoderProcessOutput(enc.get(), &next_out, &avail_out);
-
-    if (process_result == JXL_ENC_NEED_MORE_OUTPUT) {
-      size_t offset = next_out - this->cb_.codestream;
-      this->cb_.size = 2 * this->cb_.size;
-      this->cb_.codestream =
-          (uint8_t*)realloc(this->cb_.codestream, this->cb_.size);
-      next_out = this->cb_.codestream + offset;
-      avail_out = this->cb_.size - offset;
-    }
-  }
-
-  this->cb_.size = next_out - this->cb_.codestream;
-  this->cb_.codestream =
-      (uint8_t*)realloc(this->cb_.codestream, this->cb_.size);
-  if (JXL_ENC_SUCCESS != process_result) {
-    throw std::runtime_error("JxlEncoderProcessOutput failed\n");
-  }
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, 7, &this->cb_.codestream);
 
   return this->cb_;
 }
