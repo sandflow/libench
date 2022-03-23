@@ -7,6 +7,7 @@ import typing
 from dataclasses import dataclass, field
 import matplotlib.pyplot as plt
 import chevron
+import PIL
 
 
 @dataclass
@@ -20,9 +21,10 @@ class Codec:
 @dataclass
 class Image:
   """Image information"""
-  name: str
-  preview_path: str
-  src_path: str
+  path: str
+  width: int
+  height: int
+  format: str
   size: int = 0
   codecs : typing.Iterable[Codec] = field(default_factory=list)
 
@@ -118,6 +120,46 @@ def build(build_dir, images: typing.Iterable[Image]):
     with open(os.path.join(build_dir, "index.html"), "w", encoding="utf-8") as index_file:
       index_file.write(chevron.render(template_file, results))
 
+def run_perf_tests(root_path: str, bin_path: str) -> typing.Dict[str, typing.List[Image]]:
+
+  images = {}
+
+  for dirpath, _dirnames, filenames in os.walk(root_path):
+    cat_name = os.path.basename(dirpath)
+    for fn in filenames:
+      if os.path.splitext(fn)[1] != ".png":
+        pass
+
+      file_path = os.path.join(dirpath, fn)
+
+      im = PIL.Image.open(file_path)
+
+      if im.mode not in ("RGBA", "RGB"):
+        pass
+
+      image = Image(
+        height=im.height,
+        width=im.width,
+        format=im.mode + "8",
+        path=os.path.relpath(file_path, root_path)
+        )
+
+      for codec_name in ("ojph", "jxl", "qoi", "kduht"):
+        result = json.load(os.popen(f"{bin_path} --repetitions 3 {codec_name} {file_path}"))
+        image.codecs.append(
+          Codec(
+            name=codec_name,
+            encode_time=sum(result["encodeTimes"])/len(result["encodeTimes"]),
+            decode_time=sum(result["decodeTimes"])/len(result["decodeTimes"]),
+            coded_size=result["codestreamSize"]
+          )
+        )
+        image.size=result["imageSize"]
+
+      images.setdefault(cat_name, []).append(image)
+
+  return images
+  
 def _main():
   parser = argparse.ArgumentParser(description="Generate static web page with lossless coding results.")
   parser.add_argument("manifest_path", type=str, help="Path of the manifest file")
