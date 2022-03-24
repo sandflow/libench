@@ -40,9 +40,7 @@ class MakePageTest(unittest.TestCase):
     make_page.build(MakePageTest.BUILD_DIR, images)
 
   def test_walk(self):
-    images = make_page.run_perf_tests("src/test/resources", MakePageTest.BIN_PATH)
-
-    results = images.get("resources")
+    results = make_page.run_perf_tests("src/test/resources", MakePageTest.BIN_PATH)
 
     self.assertIsNotNone(results)
-    self.assertEqual(len(results), 2)
+    self.assertEqual(len(results), 8)

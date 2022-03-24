@@ -1,32 +1,31 @@
+from asyncio.subprocess import PIPE
 from datetime import datetime
 import os
+import subprocess
 import os.path
 import argparse
 import json
 import typing
-from dataclasses import dataclass, field
+import dataclasses
+import csv
 import matplotlib.pyplot as plt
 import chevron
-import PIL
+import png
 
 
-@dataclass
-class Codec:
-  """Codec-specific results"""
-  name: str
+@dataclasses.dataclass
+class Result:
+  """Single result"""
+  codec_name: str
   encode_time: float
   decode_time: float
   coded_size: float
-
-@dataclass
-class Image:
-  """Image information"""
-  path: str
-  width: int
-  height: int
-  format: str
-  size: int = 0
-  codecs : typing.Iterable[Codec] = field(default_factory=list)
+  image_path: str
+  image_width: int
+  image_height: int
+  image_format: str
+  image_size: int
+  set_name: str
 
 def _link_overwrite(src, dst):
   if os.path.exists(dst):
@@ -38,7 +37,7 @@ def _apply_common_style(axes):
   axes.grid(True)
   axes.set(xlim=(0, None))
 
-def build(build_dir, images: typing.Iterable[Image]):
+def build(build_dir, images):
 
   # build input to template engine
   results = {
@@ -120,85 +119,79 @@ def build(build_dir, images: typing.Iterable[Image]):
     with open(os.path.join(build_dir, "index.html"), "w", encoding="utf-8") as index_file:
       index_file.write(chevron.render(template_file, results))
 
-def run_perf_tests(root_path: str, bin_path: str) -> typing.Dict[str, typing.List[Image]]:
+def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
-  images = {}
+  results = []
 
   for dirpath, _dirnames, filenames in os.walk(root_path):
-    cat_name = os.path.basename(dirpath)
+    collection_name = os.path.relpath(dirpath, root_path)
+    print(f"Collection: {collection_name}")
     for fn in filenames:
       if os.path.splitext(fn)[1] != ".png":
-        pass
+        continue
 
       file_path = os.path.join(dirpath, fn)
 
-      im = PIL.Image.open(file_path)
+      png_width, png_height, _png_rows, png_info = png.Reader(filename=file_path).read(lenient=True)
 
-      if im.mode not in ("RGBA", "RGB"):
-        pass
+      if png_info["greyscale"] or png_info["bitdepth"] != 8:
+        continue
 
-      image = Image(
-        height=im.height,
-        width=im.width,
-        format=im.mode + "8",
-        path=os.path.relpath(file_path, root_path)
-        )
+      png_format = "RGBA8" if png_info["alpha"] else "RGB8"
+
+      rel_path = os.path.relpath(file_path, root_path)
+
+      print(f"{rel_path} ({png_format}): ", end="")
 
       for codec_name in ("ojph", "jxl", "qoi", "kduht"):
-        result = json.load(os.popen(f"{bin_path} --repetitions 3 {codec_name} {file_path}"))
-        image.codecs.append(
-          Codec(
-            name=codec_name,
-            encode_time=sum(result["encodeTimes"])/len(result["encodeTimes"]),
-            decode_time=sum(result["decodeTimes"])/len(result["decodeTimes"]),
-            coded_size=result["codestreamSize"]
+
+        try:
+          stdout = json.loads(
+            subprocess.run([bin_path, "--repetitions", "3", codec_name, file_path], check=True, stdout=subprocess.PIPE, encoding="utf-8").stdout
+            )
+
+          result = Result(
+              codec_name=codec_name,
+              encode_time=sum(stdout["encodeTimes"])/len(stdout["encodeTimes"]),
+              decode_time=sum(stdout["decodeTimes"])/len(stdout["decodeTimes"]),
+              coded_size=stdout["codestreamSize"],
+              image_size=stdout["imageSize"],
+              image_height=png_height,
+              image_width=png_width,
+              image_format=png_format,
+              image_path=rel_path,
+              set_name=collection_name
           )
-        )
-        image.size=result["imageSize"]
 
-      images.setdefault(cat_name, []).append(image)
+          results.append(result)
 
-  return images
-  
+          print(".", end="")
+
+        except (json.decoder.JSONDecodeError, subprocess.CalledProcessError):
+          print("x", end="")
+
+      print()
+
+  return results
+
 def _main():
   parser = argparse.ArgumentParser(description="Generate static web page with lossless coding results.")
-  parser.add_argument("manifest_path", type=str, help="Path of the manifest file")
+  parser.add_argument("images_path", type=str, help="Root path of the image")
   parser.add_argument("build_path", type=str, help="Path of the build directory")
   parser.add_argument("--bin_path", type=str, default="./build/libench", help="Path of the libench executable")
   args = parser.parse_args()
 
   os.makedirs(args.build_path, exist_ok=True)
 
-  with open(args.manifest_path, encoding="utf-8") as f:
-    image_list = json.load(f)
+  results = run_perf_tests(args.images_path, args.bin_path)
 
-  image_root_dir = os.path.dirname(args.manifest_path)
+  with open(os.path.join(args.build_path, "results.csv"), "w", encoding="utf-8") as csvfile:
+    writer = csv.DictWriter(csvfile, list(map(lambda x: x.name, dataclasses.fields(Result))))
 
-  images = []
+    writer.writeheader()
 
-  for image in image_list:
-
-    image = Image(
-      name=os.path.basename(image['path']),
-      src_path=os.path.join(image_root_dir, image['path']),
-      preview_path=os.path.join(image_root_dir, image['preview'])
-    )
-
-    for codec_name in ("ojph", "jxl", "qoi", "kduht"):
-      result = json.load(os.popen(f"{args.bin_path} {codec_name} {image.src_path}"))
-      image.codecs.append(
-        Codec(
-          name=codec_name,
-          encode_time=sum(result["encodeTimes"])/len(result["encodeTimes"]),
-          decode_time=sum(result["decodeTimes"])/len(result["decodeTimes"]),
-          coded_size=result["codestreamSize"]
-        )
-      )
-      image.size=result["imageSize"]
-
-    images.append(image)
-
-  build(args.build_path, images)
+    for result in results:
+      writer.writerow(dataclasses.asdict(result))
 
 if __name__ == "__main__":
   _main()
