@@ -11,6 +11,7 @@ import csv
 import matplotlib.pyplot as plt
 import chevron
 import png
+import pandas as pd
 
 
 @dataclasses.dataclass
@@ -118,6 +119,35 @@ def build(build_dir, images):
   with open("src/main/resources/hbs/index.hbs", "r", encoding="utf-8") as template_file:
     with open(os.path.join(build_dir, "index.html"), "w", encoding="utf-8") as index_file:
       index_file.write(chevron.render(template_file, results))
+
+def make_analysis(results_path: str, build_path: str):
+  df = pd.read_csv(results_path)
+  fig, axs = plt.subplots(3, 3, figsize=(15,15))
+  for (i, (label, gdf)) in enumerate(df[df['image_format'] == "RGB8"].groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")):
+    ax = axs[i // 3, i % 3]
+    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange'], ax=ax)
+    ax.set(ylabel=None)
+    ax.set(xlabel=None)
+    ax.set_title(label, pad=20)
+    ax.set_ybound(lower=0)
+    ax.set_xbound(lower=0)
+    for r in gdf.itertuples():
+      x_offset = 0 if r.encode_time > ax.get_xlim()[1]/2 else 15
+      y_offset = -15 if r.coded_size > ax.get_ylim()[1]/2 else 15
+      h_align = "left" if r.encode_time > ax.get_ylim()[1]/2 else "right"
+      ax.annotate(
+        r.codec_name,
+        (r.encode_time, r.coded_size),
+        horizontalalignment=h_align,
+        xytext=(x_offset, y_offset),
+        textcoords="offset points"
+      )
+  fig.supxlabel("Encode time (s)")
+  fig.supylabel("Coded size (byte)")
+  fig.set_dpi(300)
+  fig.tight_layout()
+  fig.savefig(build_path)
+  
 
 def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
