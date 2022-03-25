@@ -1,10 +1,13 @@
 from asyncio.subprocess import PIPE
+from cgitb import enable
 from datetime import datetime
+from math import ceil
 import os
 import subprocess
 import os.path
 import argparse
 import json
+from termios import N_STRIP
 import typing
 import dataclasses
 import csv
@@ -120,33 +123,83 @@ def build(build_dir, images):
     with open(os.path.join(build_dir, "index.html"), "w", encoding="utf-8") as index_file:
       index_file.write(chevron.render(template_file, results))
 
-def make_analysis(results_path: str, build_path: str):
+def make_analysis(results_path: str, build_dir_path: str):
   df = pd.read_csv(results_path)
-  fig, axs = plt.subplots(3, 3, figsize=(15,15))
-  for (i, (label, gdf)) in enumerate(df[df['image_format']].groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")):
+  df_by_set = df.groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")
+  n_rows = ceil(len(df_by_set) / 3)
+  fig_height = 15 * n_rows / 3
+
+  fig, axs = plt.subplots(n_rows, 3, figsize=(15, fig_height))
+  if len(df_by_set) % 3 > 0:
+    for i in range(len(df_by_set) % 3, 3):
+      fig.delaxes(axs[n_rows - 1, i])
+
+  for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // 3, i % 3]
-    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange'], ax=ax)
+    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple'], ax=ax)
     ax.set(ylabel=None)
     ax.set(xlabel=None)
-    ax.set_title(label, pad=20)
-    ax.set_ybound(lower=0)
-    ax.set_xbound(lower=0)
+    ax.set_title(label, pad=20, fontsize="medium")
+    ax.ticklabel_format(style="sci", scilimits=(-2,2))
+
+    y_padding = ax.get_ybound()[1] * 0.05
+    ax.set_ybound(lower=-y_padding, upper=ax.get_ybound()[1] + y_padding)
+    x_padding = ax.get_xbound()[1] * 0.05
+    ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
+
     for r in gdf.itertuples():
-      x_offset = 0 if r.encode_time > ax.get_xlim()[1]/2 else 15
-      y_offset = -15 if r.coded_size > ax.get_ylim()[1]/2 else 15
-      h_align = "left" if r.encode_time > ax.get_ylim()[1]/2 else "right"
+      y_offset = -15 if r.coded_size > ax.get_ybound()[1]/2 else 15
+      h_align = "right" if r.encode_time > ax.get_xbound()[1]/2 else "left"
       ax.annotate(
         r.codec_name,
         (r.encode_time, r.coded_size),
         horizontalalignment=h_align,
-        xytext=(x_offset, y_offset),
+        xytext=(0, y_offset),
         textcoords="offset points"
       )
+    
   fig.supxlabel("Encode time (s)")
-  fig.supylabel("Coded size (byte)")
+  fig.supylabel("Coded size (byte)", x=0.01)
+  fig.suptitle('Encoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
   fig.set_dpi(300)
   fig.tight_layout()
-  fig.savefig(build_path)
+  fig.savefig(os.path.join(build_dir_path, "encode-stats.svg"))
+
+  fig, axs = plt.subplots(n_rows, 3, figsize=(15, fig_height))
+  if len(df_by_set) % 3 > 0:
+    for i in range(len(df_by_set) % 3, 3):
+      fig.delaxes(axs[n_rows - 1, i])
+
+  for (i, (label, gdf)) in enumerate(df_by_set):
+    ax = axs[i // 3, i % 3]
+    gdf.plot(x="decode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple'], ax=ax)
+    ax.set(ylabel=None)
+    ax.set(xlabel=None)
+    ax.set_title(label, pad=20, fontsize="medium")
+    ax.ticklabel_format(style="sci", scilimits=(-2,2))
+
+    y_padding = ax.get_ybound()[1] * 0.05
+    ax.set_ybound(lower=-y_padding, upper=ax.get_ybound()[1] + y_padding)
+    x_padding = ax.get_xbound()[1] * 0.05
+    ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
+
+    for r in gdf.itertuples():
+      y_offset = -15 if r.coded_size > ax.get_ybound()[1]/2 else 15
+      h_align = "right" if r.decode_time > ax.get_xbound()[1]/2 else "left"
+      ax.annotate(
+        r.codec_name,
+        (r.decode_time, r.coded_size),
+        horizontalalignment=h_align,
+        xytext=(0, y_offset),
+        textcoords="offset points"
+      )
+
+  fig.supxlabel("Decode time (s)")
+  fig.supylabel("Coded size (byte)", x=0.01)
+  fig.set_dpi(300)
+  fig.suptitle('Decoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
+  fig.tight_layout()
+  fig.savefig(os.path.join(build_dir_path, "decode-stats.svg"))
   
 
 def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:

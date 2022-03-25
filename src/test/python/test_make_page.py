@@ -46,4 +46,4 @@ class MakePageTest(unittest.TestCase):
     self.assertEqual(len(results), 8)
 
   def test_make_analysis(self):
-    make_page.make_analysis("src/test/resources/results.csv", "build/figure.svg")
+    make_page.make_analysis("src/test/resources/results.csv", "build")
