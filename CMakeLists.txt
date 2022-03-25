@@ -28,6 +28,10 @@ include_directories(ext/OpenJPH/src/core/common)
 
 include_directories(ext/stb)
 
+# lodepng
+
+include_directories(ext/lodepng)
+
 # qoi
 
 include_directories(ext/qoi)
@@ -57,7 +61,7 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 # main executable
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
-add_executable(libench ${LIBENCH_SRC_FILES})
+add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
 target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 #if(1)
@@ -71,9 +75,10 @@ target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless ${KDU_LI
 
 enable_testing()
 
-add_test(NAME "ojph" COMMAND libench ojph ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "ojph" COMMAND libench j2k_ojph ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
 add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
 add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
 add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
 add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
-add_test(NAME "kdu-ht" COMMAND libench kduht ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "kdu-ht" COMMAND libench j2k_kduht ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)

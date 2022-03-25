@@ -16,3 +16,6 @@
 [submodule "ext/crypto-algorithms"]
 	path = ext/crypto-algorithms
 	url = https://github.com/B-Con/crypto-algorithms.git
+[submodule "ext/lodepng"]
+	path = ext/lodepng
+	url = https://github.com/lvandeve/lodepng.git

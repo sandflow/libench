@@ -123,7 +123,7 @@ def build(build_dir, images):
 def make_analysis(results_path: str, build_path: str):
   df = pd.read_csv(results_path)
   fig, axs = plt.subplots(3, 3, figsize=(15,15))
-  for (i, (label, gdf)) in enumerate(df[df['image_format'] == "RGB8"].groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")):
+  for (i, (label, gdf)) in enumerate(df[df['image_format']].groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")):
     ax = axs[i // 3, i % 3]
     gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange'], ax=ax)
     ax.set(ylabel=None)
@@ -173,7 +173,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
       print(f"{rel_path} ({png_format}): ", end="")
 
-      for codec_name in ("ojph", "jxl", "qoi", "kduht"):
+      for codec_name in ("j2k_ojph", "jxl", "qoi", "j2k_kduht", "png"):
 
         try:
           stdout = json.loads(
