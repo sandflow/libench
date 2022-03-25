@@ -13,27 +13,33 @@
  * JXLEncoder
  */
 
-libench::JXLEncoder::JXLEncoder() {
+template class libench::JXLEncoder<2>;
+template class libench::JXLEncoder<7>;
+
+template<int E>
+libench::JXLEncoder<E>::JXLEncoder() {
   this->cb_ = {.codestream = NULL, .size = 0};
 };
 
-libench::CodestreamBuffer libench::JXLEncoder::encodeRGB8(const uint8_t* pixels,
+template<int E>
+libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(const uint8_t* pixels,
                                                           uint32_t width,
                                                           uint32_t height) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, 7, &this->cb_.codestream);
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, E, &this->cb_.codestream);
 
   return this->cb_;
 }
 
-libench::CodestreamBuffer libench::JXLEncoder::encodeRGBA8(
+template<int E>
+libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGBA8(
     const uint8_t* pixels,
     uint32_t width,
     uint32_t height) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, 7, &this->cb_.codestream);
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, E, &this->cb_.codestream);
 
   return this->cb_;
 }

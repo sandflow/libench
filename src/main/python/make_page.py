@@ -136,7 +136,7 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // 3, i % 3]
-    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple'], ax=ax)
+    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple', "brown"], ax=ax)
     ax.set(ylabel=None)
     ax.set(xlabel=None)
     ax.set_title(label, pad=20, fontsize="medium")
@@ -172,7 +172,7 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // 3, i % 3]
-    gdf.plot(x="decode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple'], ax=ax)
+    gdf.plot(x="decode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple', "brown"], ax=ax)
     ax.set(ylabel=None)
     ax.set(xlabel=None)
     ax.set_title(label, pad=20, fontsize="medium")
@@ -206,6 +206,9 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
   results = []
 
+  sub_env = os.environ.copy()
+  sub_env["OMP_NUM_THREADS"] = "1"
+
   for dirpath, _dirnames, filenames in os.walk(root_path):
     collection_name = os.path.relpath(dirpath, root_path)
     print(f"Collection: {collection_name}")
@@ -226,11 +229,11 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
       print(f"{rel_path} ({png_format}): ", end="")
 
-      for codec_name in ("j2k_ojph", "jxl", "qoi", "j2k_kduht", "png"):
+      for codec_name in ("j2k_ojph", "jxl_2", "jxl_7", "qoi", "j2k_kduht", "png"):
 
         try:
           stdout = json.loads(
-            subprocess.run([bin_path, "--repetitions", "3", codec_name, file_path], check=True, stdout=subprocess.PIPE, encoding="utf-8").stdout
+            subprocess.run([bin_path, "--repetitions", "3", codec_name, file_path], env=sub_env, check=True, stdout=subprocess.PIPE, encoding="utf-8").stdout
             )
 
           result = Result(

@@ -6,6 +6,7 @@
 
 namespace libench {
 
+template<int E>
 class JXLEncoder : public Encoder {
  public:
   JXLEncoder();

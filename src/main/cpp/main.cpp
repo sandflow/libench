@@ -81,8 +81,11 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "qoi") {
     encoder.reset(new libench::QOIEncoder());
     decoder.reset(new libench::QOIDecoder());
-  } else if (result["codec"].as<std::string>() == "jxl") {
-    encoder.reset(new libench::JXLEncoder());
+  } else if (result["codec"].as<std::string>() == "jxl_2") {
+    encoder.reset(new libench::JXLEncoder<2>());
+    decoder.reset(new libench::JXLDecoder());
+  } else if (result["codec"].as<std::string>() == "jxl_7") {
+    encoder.reset(new libench::JXLEncoder<7>());
     decoder.reset(new libench::JXLDecoder());
   } else if (result["codec"].as<std::string>() == "j2k_kduht") {
     encoder.reset(new libench::KDUHTEncoder());
