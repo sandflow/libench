@@ -7,7 +7,6 @@ import subprocess
 import os.path
 import argparse
 import json
-from termios import N_STRIP
 import typing
 import dataclasses
 import csv
@@ -136,7 +135,9 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // 3, i % 3]
-    gdf.plot(x="encode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple', "brown"], ax=ax)
+    for j in range(len(gdf["encode_time"])):
+      ax.scatter(gdf["encode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, label=gdf["codec_name"].iloc[j])
+    
     ax.set(ylabel=None)
     ax.set(xlabel=None)
     ax.set_title(label, pad=20, fontsize="medium")
@@ -146,6 +147,9 @@ def make_analysis(results_path: str, build_dir_path: str):
     ax.set_ybound(lower=-y_padding, upper=ax.get_ybound()[1] + y_padding)
     x_padding = ax.get_xbound()[1] * 0.05
     ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
+
+    if i == 1:
+      ax.legend(loc='lower left')
 
     for r in gdf.itertuples():
       y_offset = -15 if r.coded_size > ax.get_ybound()[1]/2 else 15
@@ -157,13 +161,13 @@ def make_analysis(results_path: str, build_dir_path: str):
         xytext=(0, y_offset),
         textcoords="offset points"
       )
-    
+
   fig.supxlabel("Encode time (s)")
   fig.supylabel("Coded size (byte)", x=0.01)
   fig.suptitle('Encoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
   fig.set_dpi(300)
   fig.tight_layout()
-  fig.savefig(os.path.join(build_dir_path, "encode-stats.svg"))
+  fig.savefig(os.path.join(build_dir_path, "encode-stats.png"))
 
   fig, axs = plt.subplots(n_rows, 3, figsize=(15, fig_height))
   if len(df_by_set) % 3 > 0:
@@ -172,7 +176,9 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // 3, i % 3]
-    gdf.plot(x="decode_time", y="coded_size", kind='scatter', s=80, c=['red', 'green', 'blue', 'orange', 'purple', "brown"], ax=ax)
+    for j in range(len(gdf["decode_time"])):
+      ax.scatter(gdf["decode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, label=gdf["codec_name"].iloc[j])
+      
     ax.set(ylabel=None)
     ax.set(xlabel=None)
     ax.set_title(label, pad=20, fontsize="medium")
@@ -182,6 +188,9 @@ def make_analysis(results_path: str, build_dir_path: str):
     ax.set_ybound(lower=-y_padding, upper=ax.get_ybound()[1] + y_padding)
     x_padding = ax.get_xbound()[1] * 0.05
     ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
+
+    if i == 1:
+      ax.legend(loc='lower left')
 
     for r in gdf.itertuples():
       y_offset = -15 if r.coded_size > ax.get_ybound()[1]/2 else 15
@@ -199,8 +208,7 @@ def make_analysis(results_path: str, build_dir_path: str):
   fig.set_dpi(300)
   fig.suptitle('Decoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
   fig.tight_layout()
-  fig.savefig(os.path.join(build_dir_path, "decode-stats.svg"))
-  
+  fig.savefig(os.path.join(build_dir_path, "decode-stats.png"))
 
 def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
@@ -229,7 +237,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
       print(f"{rel_path} ({png_format}): ", end="")
 
-      for codec_name in ("j2k_ojph", "jxl_2", "jxl_7", "qoi", "j2k_kduht", "png"):
+      for codec_name in ("j2k_ojph", "jxl_2", "jxl_0", "qoi", "j2k_kduht", "png"):
 
         try:
           stdout = json.loads(

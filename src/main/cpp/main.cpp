@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "jxl_2") {
     encoder.reset(new libench::JXLEncoder<2>());
     decoder.reset(new libench::JXLDecoder());
-  } else if (result["codec"].as<std::string>() == "jxl_7") {
-    encoder.reset(new libench::JXLEncoder<7>());
+  } else if (result["codec"].as<std::string>() == "jxl_0") {
+    encoder.reset(new libench::JXLEncoder<0>());
     decoder.reset(new libench::JXLDecoder());
   } else if (result["codec"].as<std::string>() == "j2k_kduht") {
     encoder.reset(new libench::KDUHTEncoder());

@@ -13,8 +13,8 @@
  * JXLEncoder
  */
 
+template class libench::JXLEncoder<0>;
 template class libench::JXLEncoder<2>;
-template class libench::JXLEncoder<7>;
 
 template<int E>
 libench::JXLEncoder<E>::JXLEncoder() {
