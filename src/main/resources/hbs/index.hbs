@@ -13,66 +13,80 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand navbar-light bg-light d-print-block justify-content-between">
-    <h1><a class="navbar-brand" href="#">Lossless image coding benchmarks</a></h1>
-  </nav>
+  <main>
 
+    <section class="col-lg-6 mx-auto py-5">
+      <h2 class="fw-bold text-center">Lossless Coding Benchmarks</h2>
 
-  <section class="container">
-    {{#images}}
-    <section>
-      <h2>{{name}}</h2>
-      <img src="{{encode_plot_fn}}" />
-      <img src="{{decode_plot_fn}}" />
-      <div class="row">
+      <p class="mt-4 lead">Lossless <a href="#encoding">encoding</a> and <a href="decoding">decoding</a> benchmarks
+        using the <a href="https://qoiformat.org/benchmark/">QOI image set</a>
+        and frames from the <a href="http://download.opencontent.netflix.com/?prefix=Meridian/">Netflix
+          Meridian</a> test reel. All images are RGB(A) and 8 bits per pixel component. </p>
 
-        <div class="col w-10">
-          <a href="{{src_url}}"><img src="{{preview_url}}" /></a>
-        </div>
+      <p>Each plot is for a set of images with similar characteristics.
+        The <em>vertical axis</em> is the <em>average size in bytes</em> of a coded image in the set. The <em>horizontal
+          axis</em> is the <em>average encode or decode time in seconds</em> of an image in the set.
+        The closer to the bottom left of each plot the faster and more coding efficient.</p>
 
-        <div class="col w-30">
-          <table class="table table-hover">
-            <thead class="text-center thead-light">
-              <tr>
-                <th colspan=2>Image characteristics</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>Size (kiB)</th>
-                <td>{{size}}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <p class="mt-4">For each combination of source image and codec, the benchmark loads the image in memory and encodes/decodes it
+        using the codec. The decoded
+        image is checked against the source image to confirm they are bit-for-bit identical. Encode and decode times are
+        averaged over three runs.</p>
 
-        <div class="col w-30">
-          <table class="table table-hover">
-            <thead class="text-center thead-light">
-              <tr>
-                <th>Codec</th>
-                <th>Encode time (ms)</th>
-                <th>Decode time (ms)</th>
-                <th>Coded size (kiB)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {{#codecs}}
-              <tr>
-                <td>{{name}}</td>
-                <td>{{encode_time}}</td>
-                <td>{{decode_time}}</td>
-                <td>{{coded_size}}</td>
-              </tr>
-              {{/codecs}}
-            </tbody>
-          </table>
-        </div>
-
-      </div>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Short name</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>qoi</code></td>
+            <td><a href="https://github.com/phoboslab/qoi">Quite OK Image Format</a></td>
+          </tr>
+          <tr>
+            <td><code>jxl</code></td>
+            <td>JPEG XL using <a href="https://github.com/libjxl/libjxl">libjxl</a></code>.
+            </td>
+          </tr>
+          <tr>
+            <td><code>png</code></td>
+            <td>Portable Network Graphics (PNG) using <a href="https://github.com/lvandeve/lodepng">LodePNG</a>
+            </td>
+          </tr>
+          <tr>
+            <td><code>j2k_ht_ojph</code></td>
+            <td>JPEG 2000 Part 15 (High-Throughput JPEG 2000) using
+              <a href="https://github.com/aous72/OpenJPH">OpenJPH</a>
+            </td>
+          </tr>
+          <tr>
+            <td><code>j2k_ht_kdu</code></td>
+            <td>JPEG 2000 Part 15 (High-Throughput JPEG 2000) using
+              <a href="https://kakadusoftware.com/">Kakadu</a> (commercial library)
+            </td>
+          </tr>
+          <tr>
+            <td><code>j2k_1_kdu</code></td>
+            <td>JPEG 2000 Part 1 using <a href="https://kakadusoftware.com/">Kakadu</a> (commercial library)</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
-    {{/images}}
-  </section>
+
+    <section id="encoding" class="container">
+      <h2 class="text-center">Encoding results</h2>
+      <img class="img-fluid" src="encode-stats.png" />
+    </section>
+
+
+    <section id="decoding" class="container">
+      <h2 class="text-center">Decoding results</h2>
+      <img class="img-fluid" src="decode-stats.png" />
+    </section>
+
+  </main>
 
   <footer>
     <small class="text-muted">

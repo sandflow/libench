@@ -12,6 +12,7 @@ extern "C" {
 #include "ojph_codec.h"
 #include "qoi_codec.h"
 #include "kduht_codec.h"
+#include "png_codec.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
@@ -74,18 +75,27 @@ int main(int argc, char* argv[]) {
 
   auto result = options.parse(argc, argv);
 
-  if (result["codec"].as<std::string>() == "ojph") {
+  if (result["codec"].as<std::string>() == "j2k_ht_ojph") {
     encoder.reset(new libench::OJPHEncoder());
     decoder.reset(new libench::OJPHDecoder());
   } else if (result["codec"].as<std::string>() == "qoi") {
     encoder.reset(new libench::QOIEncoder());
     decoder.reset(new libench::QOIDecoder());
   } else if (result["codec"].as<std::string>() == "jxl") {
-    encoder.reset(new libench::JXLEncoder());
+    encoder.reset(new libench::JXLEncoder<2>());
     decoder.reset(new libench::JXLDecoder());
-  } else if (result["codec"].as<std::string>() == "kduht") {
-    encoder.reset(new libench::KDUHTEncoder());
-    decoder.reset(new libench::KDUHTDecoder());
+  } else if (result["codec"].as<std::string>() == "jxl_0") {
+    encoder.reset(new libench::JXLEncoder<0>());
+    decoder.reset(new libench::JXLDecoder());
+  } else if (result["codec"].as<std::string>() == "j2k_ht_kdu") {
+    encoder.reset(new libench::KDUEncoder(true));
+    decoder.reset(new libench::KDUDecoder());
+  } else if (result["codec"].as<std::string>() == "j2k_1_kdu") {
+    encoder.reset(new libench::KDUEncoder(false));
+    decoder.reset(new libench::KDUDecoder());
+  } else if (result["codec"].as<std::string>() == "png") {
+    encoder.reset(new libench::PNGEncoder());
+    decoder.reset(new libench::PNGDecoder());
   } else {
     throw std::runtime_error("Unknown encoder");
   }
@@ -97,6 +107,7 @@ int main(int argc, char* argv[]) {
   int height;
   int num_comps;
 
+
   unsigned char* data =
       stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
 
@@ -105,7 +116,8 @@ int main(int argc, char* argv[]) {
   }
 
   if (num_comps < 3 || num_comps > 4) {
-    throw std::runtime_error("Only RGB or RGBA images are supported");
+    std::cerr << "Only RGB or RGBA images are supported";
+    return 1;
   }
 
   int repetitions = result["repetitions"].as<int>();
@@ -185,6 +197,10 @@ int main(int argc, char* argv[]) {
     }
 
     ctx.decode_times[i] = clock() - start;
+
+    /*std::ofstream raw(filepath + "." + result["codec"].as<std::string>() + ".raw");
+    raw.write((const char*) pb.pixels, width * height * num_comps);
+    raw.close();*/
 
     /* bit exact compare */
 
