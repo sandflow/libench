@@ -21,6 +21,7 @@
       <ul class="navbar-nav">
         <li class="nav-item"><a class="nav-link" href="https://github.com/sandflow/libench">Get the code</a></li>
         <li class="nav-item"><a class="nav-link" href="https://github.com/sandflow/libench/issues">Report an issue</a>
+        <li class="nav-item"><a class="nav-link" href="results.csv">Get the raw data</a>
         </li>
       </ul>
     </div>
@@ -44,7 +45,7 @@
 
       <p class="mt-4">For each combination of source image and codec, the <a href="https://github.com/sandflow/libench">benchmark</a> loads the image in memory and
         encodes/decodes it
-        using the codec. The decoded
+        using the codec (<a href="results.csv">download the raw data</a>). The decoded
         image is checked against the source image to confirm they are bit-for-bit identical. Encode and decode times are
         averaged over three runs. Codecs are ran single-threaded.</p>
 
