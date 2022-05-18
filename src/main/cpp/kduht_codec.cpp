@@ -9,28 +9,28 @@
 #include "kdu_stripe_decompressor.h"
 
 /*
- * KDUHTEncoder
+ * KDUEncoder
  */
 
 using namespace kdu_supp;
 
-libench::KDUHTEncoder::KDUHTEncoder(){};
+libench::KDUEncoder::KDUEncoder(bool isHT) : isHT_(isHT){};
 
-libench::CodestreamBuffer libench::KDUHTEncoder::encodeRGB8(
+libench::CodestreamBuffer libench::KDUEncoder::encodeRGB8(
     const uint8_t* pixels,
     uint32_t width,
     uint32_t height) {
   return this->encode8(pixels, width, height, 3);
 }
 
-libench::CodestreamBuffer libench::KDUHTEncoder::encodeRGBA8(
+libench::CodestreamBuffer libench::KDUEncoder::encodeRGBA8(
     const uint8_t* pixels,
     uint32_t width,
     uint32_t height) {
   return this->encode8(pixels, width, height, 4);
 }
 
-libench::CodestreamBuffer libench::KDUHTEncoder::encode8(const uint8_t* pixels,
+libench::CodestreamBuffer libench::KDUEncoder::encode8(const uint8_t* pixels,
                                                          uint32_t width,
                                                          uint32_t height,
                                                          uint8_t num_comps) {
@@ -48,12 +48,24 @@ libench::CodestreamBuffer libench::KDUHTEncoder::encode8(const uint8_t* pixels,
 
   codestream.create(&siz, &this->out_);
   codestream.access_siz()->access_cluster(COD_params)->set(Creversible, 0, 0, true);
+  if (this->isHT_)
     codestream.access_siz()->access_cluster(COD_params)->set(Cmodes, 0, 0, Cmodes_HT);
 
   codestream.access_siz()->finalize_all();
 
   kdu_stripe_compressor compressor;
-  compressor.start(codestream);
+  compressor.start(codestream,
+    0,
+    NULL,
+    NULL,
+    0,
+    false,
+    false,
+    false,
+    0,
+    0,
+    true
+  );
   int stripe_heights[4] = {(int)height, (int)height, (int)height, (int)height};
   compressor.push_stripe((kdu_byte*)pixels, stripe_heights);
   compressor.finish();
@@ -65,24 +77,24 @@ libench::CodestreamBuffer libench::KDUHTEncoder::encode8(const uint8_t* pixels,
 }
 
 /*
- * KDUHTDecoder
+ * KDUDecoder
  */
 
-libench::KDUHTDecoder::KDUHTDecoder(){};
+libench::KDUDecoder::KDUDecoder(){};
 
-libench::PixelBuffer libench::KDUHTDecoder::decodeRGB8(
+libench::PixelBuffer libench::KDUDecoder::decodeRGB8(
     const uint8_t* codestream,
     size_t size) {
   return this->decode8(codestream, size, 3);
 }
 
-libench::PixelBuffer libench::KDUHTDecoder::decodeRGBA8(
+libench::PixelBuffer libench::KDUDecoder::decodeRGBA8(
     const uint8_t* codestream,
     size_t size) {
   return this->decode8(codestream, size, 4);
 }
 
-libench::PixelBuffer libench::KDUHTDecoder::decode8(const uint8_t* codestream,
+libench::PixelBuffer libench::KDUDecoder::decode8(const uint8_t* codestream,
                                                     size_t size,
                                                     uint8_t num_comps) {
   kdu_compressed_source_buffered buffer((kdu_byte*)codestream, size);

@@ -75,21 +75,24 @@ int main(int argc, char* argv[]) {
 
   auto result = options.parse(argc, argv);
 
-  if (result["codec"].as<std::string>() == "j2k_ojph") {
+  if (result["codec"].as<std::string>() == "j2k_ht_ojph") {
     encoder.reset(new libench::OJPHEncoder());
     decoder.reset(new libench::OJPHDecoder());
   } else if (result["codec"].as<std::string>() == "qoi") {
     encoder.reset(new libench::QOIEncoder());
     decoder.reset(new libench::QOIDecoder());
-  } else if (result["codec"].as<std::string>() == "jxl_2") {
+  } else if (result["codec"].as<std::string>() == "jxl") {
     encoder.reset(new libench::JXLEncoder<2>());
     decoder.reset(new libench::JXLDecoder());
   } else if (result["codec"].as<std::string>() == "jxl_0") {
     encoder.reset(new libench::JXLEncoder<0>());
     decoder.reset(new libench::JXLDecoder());
-  } else if (result["codec"].as<std::string>() == "j2k_kduht") {
-    encoder.reset(new libench::KDUHTEncoder());
-    decoder.reset(new libench::KDUHTDecoder());
+  } else if (result["codec"].as<std::string>() == "j2k_ht_kdu") {
+    encoder.reset(new libench::KDUEncoder(true));
+    decoder.reset(new libench::KDUDecoder());
+  } else if (result["codec"].as<std::string>() == "j2k_1_kdu") {
+    encoder.reset(new libench::KDUEncoder(false));
+    decoder.reset(new libench::KDUDecoder());
   } else if (result["codec"].as<std::string>() == "png") {
     encoder.reset(new libench::PNGEncoder());
     decoder.reset(new libench::PNGDecoder());
@@ -195,9 +198,9 @@ int main(int argc, char* argv[]) {
 
     ctx.decode_times[i] = clock() - start;
 
-    std::ofstream raw(filepath + "." + result["codec"].as<std::string>() + ".raw");
+    /*std::ofstream raw(filepath + "." + result["codec"].as<std::string>() + ".raw");
     raw.write((const char*) pb.pixels, width * height * num_comps);
-    raw.close();
+    raw.close();*/
 
     /* bit exact compare */
 

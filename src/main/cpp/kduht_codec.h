@@ -35,9 +35,9 @@ class mem_compressed_target : public kdu_compressed_target {
   std::vector<uint8_t> buf;
 };
 
-class KDUHTEncoder : public Encoder {
+class KDUEncoder : public Encoder {
  public:
-  KDUHTEncoder();
+  KDUEncoder(bool isHT = true);
 
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
                                       const uint32_t width,
@@ -53,11 +53,12 @@ class KDUHTEncoder : public Encoder {
                            uint32_t height,
                            uint8_t num_comps);
   mem_compressed_target out_;
+  bool isHT_;
 };
 
-class KDUHTDecoder : public Decoder {
+class KDUDecoder : public Decoder {
  public:
-  KDUHTDecoder();
+  KDUDecoder();
 
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream, size_t size);
 

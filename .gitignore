@@ -1,7 +1,7 @@
-build/
+/build
 .vscode/
-bin/
-images/
+/bin
+/images/
 
 # Python
 __pycache__/
