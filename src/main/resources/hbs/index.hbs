@@ -46,7 +46,7 @@
         encodes/decodes it
         using the codec. The decoded
         image is checked against the source image to confirm they are bit-for-bit identical. Encode and decode times are
-        averaged over three runs.</p>
+        averaged over three runs. Codecs are ran single-threaded.</p>
 
       <table class="table table-striped table-sm caption-top">
         <caption class="text-centered">Lossless codecs used by the benchmark</caption>
@@ -107,7 +107,8 @@
   <footer>
     <small class="text-muted">
       <p class="text-center">Version: <code>{{version}}</code></p>
-      <p class="text-center">Generated on {{date}}</p>
+      <p class="text-center">Machine: {{machine}}</p>
+      <p class="text-center">Date: {{date}}</p>
     </small>
   </footer>
 </body>

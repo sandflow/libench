@@ -31,11 +31,12 @@ class Result:
   set_name: str
   run_count: int
 
-def make_index(build_dir_path: str, version_string: str):
+def make_index(build_dir_path: str, version_string: str, machine_string: str):
   # build input to template engine
   results = {
     "date": datetime.now().isoformat(),
-    "version": version_string
+    "version": version_string,
+    "machine": machine_string
   }
 
   # apply template
@@ -204,6 +205,7 @@ def _main():
   parser.add_argument("--build_path", type=str, default="./build/www", help="Path of the build directory")
   parser.add_argument("--bin_path", type=str, default="./build/libench", help="Path of the libench executable")
   parser.add_argument("--version", type=str, default="unknown", help="Version string")
+  parser.add_argument("--machine", type=str, default="unknown", help="Machine string")
   args = parser.parse_args()
 
   os.makedirs(args.build_path, exist_ok=True)
@@ -223,7 +225,7 @@ def _main():
 
   make_analysis(results_path, args.build_path)
 
-  make_index(args.build_path, args.version)
+  make_index(args.build_path, args.version, args.machine)
 
 if __name__ == "__main__":
   _main()
