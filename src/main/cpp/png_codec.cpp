@@ -1,6 +1,7 @@
 #include "png_codec.h"
 #include <climits>
 #include <memory>
+#include <stdexcept>
 
 /*
  * PNGEncoder
