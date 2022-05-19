@@ -3,6 +3,7 @@
 #include <climits>
 #include <memory>
 #include <vector>
+#include <stdexcept>
 #include "fast_lossless.h"
 #include "jxl/decode_cxx.h"
 #include "jxl/encode_cxx.h"
