@@ -166,7 +166,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
       run_count = 3
 
-      for codec_name in ("j2k_ht_ojph", "jxl", "j2k_1_kdu", "qoi", "j2k_ht_kdu", "png"):
+      for codec_name in ("j2k_ht_ojph", "jxl", "j2k_1_kdu", "qoi", "j2k_ht_kdu", "png", "ffv1"):
 
         try:
           stdout = json.loads(
