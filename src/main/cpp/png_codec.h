@@ -32,9 +32,15 @@ class PNGDecoder : public Decoder {
  public:
   PNGDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
+                                 size_t size,
+                                 uint32_t width,
+                                 uint32_t height);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
+                                  size_t size,
+                                  uint32_t width,
+                                  uint32_t height);
 
  private:
   PixelBuffer decode8(const uint8_t* codestream,

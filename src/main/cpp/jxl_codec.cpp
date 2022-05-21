@@ -2,8 +2,8 @@
 #include <inttypes.h>
 #include <climits>
 #include <memory>
-#include <vector>
 #include <stdexcept>
+#include <vector>
 #include "fast_lossless.h"
 #include "jxl/decode_cxx.h"
 #include "jxl/encode_cxx.h"
@@ -17,30 +17,33 @@
 template class libench::JXLEncoder<0>;
 template class libench::JXLEncoder<2>;
 
-template<int E>
+template <int E>
 libench::JXLEncoder<E>::JXLEncoder() {
   this->cb_ = {.codestream = NULL, .size = 0};
 };
 
-template<int E>
-libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(const uint8_t* pixels,
-                                                          uint32_t width,
-                                                          uint32_t height) {
+template <int E>
+libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(
+    const uint8_t* pixels,
+    uint32_t width,
+    uint32_t height) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, E, &this->cb_.codestream);
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, E,
+                                      &this->cb_.codestream);
 
   return this->cb_;
 }
 
-template<int E>
+template <int E>
 libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGBA8(
     const uint8_t* pixels,
     uint32_t width,
     uint32_t height) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, E, &this->cb_.codestream);
+  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, E,
+                                      &this->cb_.codestream);
 
   return this->cb_;
 }
@@ -52,12 +55,16 @@ libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGBA8(
 libench::JXLDecoder::JXLDecoder(){};
 
 libench::PixelBuffer libench::JXLDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size) {
+                                                     size_t size,
+                                                     uint32_t width,
+                                                     uint32_t height) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::JXLDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size) {
+                                                      size_t size,
+                                                      uint32_t width,
+                                                      uint32_t height) {
   return this->decode8(codestream, size, 4);
 }
 

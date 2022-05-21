@@ -21,21 +21,27 @@ struct PixelBuffer {
 class Encoder {
  public:
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                             uint32_t width,
-                                             uint32_t height) = 0;
+                                      uint32_t width,
+                                      uint32_t height) = 0;
 
   virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                              uint32_t width,
-                                              uint32_t height) = 0;
+                                       uint32_t width,
+                                       uint32_t height) = 0;
 
   virtual ~Encoder() {}
 };
 
 class Decoder {
  public:
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream, size_t size) = 0;
+  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
+                                 size_t size,
+                                 uint32_t width,
+                                 uint32_t height) = 0;
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream, size_t size) = 0;
+  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
+                                  size_t size,
+                                  uint32_t width,
+                                  uint32_t height) = 0;
 
   virtual ~Decoder() {}
 };

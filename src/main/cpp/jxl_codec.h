@@ -1,12 +1,12 @@
 #ifndef LIBENCH_JXL_H
 #define LIBENCH_JXL_H
 
-#include "codec.h"
 #include <vector>
+#include "codec.h"
 
 namespace libench {
 
-template<int E>
+template <int E>
 class JXLEncoder : public Encoder {
  public:
   JXLEncoder();
@@ -31,9 +31,15 @@ class JXLDecoder : public Decoder {
  public:
   JXLDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
+                                 size_t size,
+                                 uint32_t width,
+                                 uint32_t height);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
+                                  size_t size,
+                                  uint32_t width,
+                                  uint32_t height);
 
  private:
   PixelBuffer decode8(const uint8_t* codestream,

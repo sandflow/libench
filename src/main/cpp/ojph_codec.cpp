@@ -111,13 +111,17 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 libench::OJPHDecoder::OJPHDecoder(){};
 
 libench::PixelBuffer libench::OJPHDecoder::decodeRGB8(const uint8_t* codestream,
-                                                      size_t size) {
+                                                      size_t size,
+                                                      uint32_t width,
+                                                      uint32_t height) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::OJPHDecoder::decodeRGBA8(
     const uint8_t* codestream,
-    size_t size) {
+    size_t size,
+    uint32_t width,
+    uint32_t height) {
   return this->decode8(codestream, size, 4);
 }
 
@@ -143,12 +147,10 @@ libench::PixelBuffer libench::OJPHDecoder::decode8(const uint8_t* codestream,
 
   this->pixels_.resize(width * height * num_comps);
 
-
   for (uint32_t i = 0; i < height; ++i) {
     uint8_t* line = &this->pixels_.data()[width * i * num_comps];
 
     for (uint32_t c = 0; c < num_comps; c++) {
-
       ojph::ui32 next_comp = 0;
       ojph::line_buf* cur_line = cs.pull(next_comp);
       assert(next_comp == c);

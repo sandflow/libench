@@ -1,6 +1,7 @@
 #include "ffv1_codec.h"
 #include <inttypes.h>
 #include <climits>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -40,7 +41,6 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
                                                         uint32_t height,
                                                         uint8_t num_comps) {
   int ret;
-  AVBufferRef* buffer_ref;
   AVCodecContext* ctx;
 
   ctx = avcodec_alloc_context3(this->codec_);
@@ -53,7 +53,9 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
 
   ctx->width = width;
   ctx->height = height;
-  ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_RGB24 : AV_PIX_FMT_RGB32;
+  ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
+  ctx->time_base = (AVRational){1, 25};
+  ctx->framerate = (AVRational){25, 1};
 
   ret = avcodec_open2(ctx, this->codec_, NULL);
   if (ret < 0)
@@ -74,8 +76,49 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
   if (ret < 0)
     throw std::runtime_error("Frame is not writable");
 
-  av_image_copy_plane(this->frame_->data[0], this->frame_->linesize[0], pixels,
-                      width, width, height);
+  if (num_comps == 3) {
+    for (int i = 0; i < height; i++) {
+      uint8_t* dst_line =
+          this->frame_->data[0] + (i * this->frame_->linesize[0]);
+      const uint8_t* src_line = pixels + (i * width * num_comps);
+      for (int j = 0; j < width; j++) {
+#if HAVE_BIGENDIAN
+        /* RGB -> 0RGB */
+        dst_line[4 * j + 0] = 255;
+        dst_line[4 * j + 1] = src_line[3 * j + 0];
+        dst_line[4 * j + 2] = src_line[3 * j + 1];
+        dst_line[4 * j + 3] = src_line[3 * j + 2];
+#else
+        /* RGB -> BGR0 */
+        dst_line[4 * j + 0] = src_line[3 * j + 2];
+        dst_line[4 * j + 1] = src_line[3 * j + 1];
+        dst_line[4 * j + 2] = src_line[3 * j + 0];
+        dst_line[4 * j + 3] = 0;
+#endif
+      }
+    }
+  } else {
+    for (int i = 0; i < height; i++) {
+      uint8_t* dst_line =
+          this->frame_->data[0] + (i * this->frame_->linesize[0]);
+      const uint8_t* src_line = pixels + (i * width * num_comps);
+      for (int j = 0; j < width; j++) {
+#if HAVE_BIGENDIAN
+        /* RGBA -> ARGB */
+        dst_line[4 * j + 0] = src_line[4 * j + 3];
+        dst_line[4 * j + 3] = src_line[4 * j + 2];
+        dst_line[4 * j + 2] = src_line[4 * j + 1];
+        dst_line[4 * j + 1] = src_line[4 * j + 0];
+#else
+        /* RGBA -> BGRA */
+        dst_line[4 * j + 0] = src_line[4 * j + 2];
+        dst_line[4 * j + 1] = src_line[4 * j + 1];
+        dst_line[4 * j + 2] = src_line[4 * j + 0];
+        dst_line[4 * j + 3] = src_line[4 * j + 3];
+#endif
+      }
+    }
+  }
 
   ret = avcodec_send_frame(ctx, this->frame_);
   if (ret < 0)
@@ -115,7 +158,7 @@ libench::CodestreamBuffer libench::FFV1Encoder::encodeRGBA8(
  */
 
 libench::FFV1Decoder::FFV1Decoder() {
-  this->codec_ = avcodec_find_encoder(AV_CODEC_ID_FFV1);
+  this->codec_ = avcodec_find_decoder(AV_CODEC_ID_FFV1);
   if (!this->codec_)
     throw std::runtime_error("avcodec_find_encoder AV_CODEC_ID_FFV1 failed");
 
@@ -134,26 +177,120 @@ libench::FFV1Decoder::~FFV1Decoder() {
 }
 
 libench::PixelBuffer libench::FFV1Decoder::decodeRGB8(const uint8_t* codestream,
-                                                      size_t size) {
-  return this->decode8(codestream, size, 3);
+                                                      size_t size,
+                                                      uint32_t width,
+                                                      uint32_t height) {
+  return this->decode8(codestream, size, 3, width, height);
 }
 
 libench::PixelBuffer libench::FFV1Decoder::decodeRGBA8(
     const uint8_t* codestream,
-    size_t size) {
-  return this->decode8(codestream, size, 4);
+    size_t size,
+    uint32_t width,
+    uint32_t height) {
+  return this->decode8(codestream, size, 4, width, height);
 }
+
+static void null_free(void*, uint8_t*) {}
 
 libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
                                                    size_t size,
-                                                   uint8_t num_comps) {
+                                                   uint8_t num_comps,
+                                                   uint32_t width,
+                                                   uint32_t height) {
   int ret;
+  AVCodecContext* ctx;
+  uint8_t* pixels;
+  AVBufferRef* buf;
 
-  
-  
+  ctx = avcodec_alloc_context3(this->codec_);
+  if (!ctx)
+    throw std::runtime_error(
+        "avcodec_alloc_codectx3 AV_CODEC_ID_FFV1 failed\n");
+
+  ctx->width = width;
+  ctx->height = height;
+  ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
+  ctx->time_base = (AVRational){1, 25};
+  ctx->framerate = (AVRational){25, 1};
+
+  ret = avcodec_open2(ctx, this->codec_, NULL);
+  if (ret < 0)
+    throw std::runtime_error("Could not open codec");
+
+  av_frame_unref(this->frame_);
+
+  av_packet_unref(this->pkt_);
+
+  buf = av_buffer_create((uint8_t*)codestream, size, &null_free, NULL,
+                         AV_BUFFER_FLAG_READONLY);
+
+  this->pkt_->buf = buf;
+  this->pkt_->data = (uint8_t*)codestream;
+  this->pkt_->size = size;
+
+  ret = avcodec_send_packet(ctx, this->pkt_);
+  if (ret < 0)
+    throw std::runtime_error("Error sending a packet for decoding");
+
+  ret = avcodec_receive_frame(ctx, this->frame_);
+  if (ret < 0)
+    throw std::runtime_error("Error during decoding");
+
+  this->pixels_.resize(this->frame_->height * this->frame_->width * num_comps);
+
+  pixels = this->pixels_.data();
+
+  if (num_comps == 3) {
+    for (int i = 0; i < height; i++) {
+      const uint8_t* src_line =
+          this->frame_->data[0] + (i * this->frame_->linesize[0]);
+      uint8_t* dst_line = pixels + (i * width * num_comps);
+      for (int j = 0; j < width; j++) {
+#if HAVE_BIGENDIAN
+        /* 0RGB -> RGB */
+        dst_line[3 * j + 0] = src_line[4 * j + 1];
+        dst_line[3 * j + 1] = src_line[4 * j + 2];
+        dst_line[3 * j + 2] = src_line[4 * j + 3];
+#else
+        /* BGR0 -> RGB */
+        dst_line[3 * j + 0] = src_line[4 * j + 2];
+        dst_line[3 * j + 1] = src_line[4 * j + 1];
+        dst_line[3 * j + 2] = src_line[4 * j + 0];
+#endif
+      }
+    }
+  } else {
+    for (int i = 0; i < height; i++) {
+      const uint8_t* src_line =
+          this->frame_->data[0] + (i * this->frame_->linesize[0]);
+      uint8_t* dst_line = pixels + (i * width * num_comps);
+      for (int j = 0; j < width; j++) {
+#if HAVE_BIGENDIAN
+        /* ARGB -> RGBA */
+        dst_line[4 * j + 0] = src_line[4 * j + 1];
+        dst_line[4 * j + 1] = src_line[4 * j + 2];
+        dst_line[4 * j + 2] = src_line[4 * j + 3];
+        dst_line[4 * j + 3] = src_line[4 * j + 0];
+#else
+        /* BGRA -> RGBA */
+        dst_line[4 * j + 0] = src_line[4 * j + 2];
+        dst_line[4 * j + 1] = src_line[4 * j + 1];
+        dst_line[4 * j + 2] = src_line[4 * j + 0];
+        dst_line[4 * j + 3] = src_line[4 * j + 3];
+#endif
+      }
+    }
+  }
+
+  avcodec_free_context(&ctx);
+
   libench::PixelBuffer pb;
 
   pb.num_comps = num_comps;
+  pb.pixels = this->pixels_.data();
+  pb.height = this->frame_->height;
+  pb.width = this->frame_->width;
 
   return pb;
 }

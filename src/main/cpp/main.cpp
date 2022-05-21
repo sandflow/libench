@@ -13,6 +13,7 @@ extern "C" {
 #include "qoi_codec.h"
 #include "kduht_codec.h"
 #include "png_codec.h"
+#include "ffv1_codec.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
@@ -96,6 +97,9 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "png") {
     encoder.reset(new libench::PNGEncoder());
     decoder.reset(new libench::PNGDecoder());
+  } else if (result["codec"].as<std::string>() == "ffv1") {
+    encoder.reset(new libench::FFV1Encoder());
+    decoder.reset(new libench::FFV1Decoder());
   } else {
     throw std::runtime_error("Unknown encoder");
   }
@@ -127,6 +131,10 @@ int main(int argc, char* argv[]) {
   ctx.encode_times.resize(repetitions);
   ctx.decode_times.resize(repetitions);
   ctx.image_sz = height * width * num_comps;
+
+  /*std::ofstream in_raw(filepath + "." + result["codec"].as<std::string>() + ".in.raw");
+  in_raw.write((const char*) data, width * height * num_comps);
+  in_raw.close();*/
 
   /* source hash */
 
@@ -187,10 +195,10 @@ int main(int argc, char* argv[]) {
 
     switch (num_comps) {
       case 3:
-        pb = decoder->decodeRGB8(cb.codestream, cb.size);
+        pb = decoder->decodeRGB8(cb.codestream, cb.size, width, height);
         break;
       case 4:
-        pb = decoder->decodeRGBA8(cb.codestream, cb.size);
+        pb = decoder->decodeRGBA8(cb.codestream, cb.size, width, height);
         break;
       default:
         throw std::runtime_error("Unsupported number of components");
@@ -198,9 +206,9 @@ int main(int argc, char* argv[]) {
 
     ctx.decode_times[i] = clock() - start;
 
-    /*std::ofstream raw(filepath + "." + result["codec"].as<std::string>() + ".raw");
-    raw.write((const char*) pb.pixels, width * height * num_comps);
-    raw.close();*/
+    /*std::ofstream out_raw(filepath + "." + result["codec"].as<std::string>() + ".out.raw");
+    out_raw.write((const char*) pb.pixels, width * height * num_comps);
+    out_raw.close();*/
 
     /* bit exact compare */
 
@@ -210,12 +218,14 @@ int main(int argc, char* argv[]) {
     md5_update(&md5_ctx, pb.pixels, width * height * num_comps);
     md5_final(&md5_ctx, decoded_hash);
 
-    if (memcmp(decoded_hash, ctx.image_hash, MD5_BLOCK_SIZE)) {
+    if (memcmp(decoded_hash, ctx.image_hash, MD5_BLOCK_SIZE))
       throw std::runtime_error("Image does not match");
-    }
+
   }
 
   std::cout << ctx;
 
   ctxs.push_back(ctx);
+
+  stbi_image_free(data);
 }
