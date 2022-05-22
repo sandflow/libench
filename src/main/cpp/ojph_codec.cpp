@@ -53,10 +53,6 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 
   ojph::param_cod cod = cs.access_cod();
 
-  cod.set_num_decomposition(6);
-  cod.set_block_dims(128, 32);
-  cod.set_precinct_size(7, IMF_PRECINCTS);
-  cod.set_progression_order("RPCL");
   cod.set_color_transform(num_comps == 3 || num_comps == 4);
   cod.set_reversible(true);
 
