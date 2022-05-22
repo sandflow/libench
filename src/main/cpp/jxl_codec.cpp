@@ -18,9 +18,7 @@ template class libench::JXLEncoder<0>;
 template class libench::JXLEncoder<2>;
 
 template <int E>
-libench::JXLEncoder<E>::JXLEncoder() {
-  this->cb_ = {.codestream = NULL, .size = 0};
-};
+libench::JXLEncoder<E>::JXLEncoder(){};
 
 template <int E>
 libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(
@@ -57,14 +55,18 @@ libench::JXLDecoder::JXLDecoder(){};
 libench::PixelBuffer libench::JXLDecoder::decodeRGB8(const uint8_t* codestream,
                                                      size_t size,
                                                      uint32_t width,
-                                                     uint32_t height) {
+                                                     uint32_t height,
+                                                     const uint8_t* init_data,
+                                                     size_t init_data_size) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::JXLDecoder::decodeRGBA8(const uint8_t* codestream,
                                                       size_t size,
                                                       uint32_t width,
-                                                      uint32_t height) {
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
   return this->decode8(codestream, size, 4);
 }
 

@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
     ctx.encode_times[i] = clock() - start;
 
     if (i == 0) {
-      ctx.codestream_sz = cb.size;
+      ctx.codestream_sz = cb.size + cb.init_data_size;
 
       if (result.count("dir")) {
         /* generate the codestream path */
@@ -195,10 +195,10 @@ int main(int argc, char* argv[]) {
 
     switch (num_comps) {
       case 3:
-        pb = decoder->decodeRGB8(cb.codestream, cb.size, width, height);
+        pb = decoder->decodeRGB8(cb.codestream, cb.size, width, height, cb.init_data, cb.init_data_size);
         break;
       case 4:
-        pb = decoder->decodeRGBA8(cb.codestream, cb.size, width, height);
+        pb = decoder->decodeRGBA8(cb.codestream, cb.size, width, height, cb.init_data, cb.init_data_size);
         break;
       default:
         throw std::runtime_error("Unsupported number of components");

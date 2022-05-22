@@ -29,6 +29,8 @@ libench::FFV1Encoder::FFV1Encoder() {
   this->frame_ = av_frame_alloc();
   if (!this->frame_)
     throw std::runtime_error("Could not allocate image frame");
+
+  this->codec_ctx_ = NULL;
 }
 
 libench::FFV1Encoder::~FFV1Encoder() {
@@ -41,31 +43,33 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
                                                         uint32_t height,
                                                         uint8_t num_comps) {
   int ret;
-  AVCodecContext* ctx;
 
-  ctx = avcodec_alloc_context3(this->codec_);
-  if (!ctx)
+  avcodec_free_context(&this->codec_ctx_);
+
+  this->codec_ctx_ = avcodec_alloc_context3(this->codec_);
+  if (!this->codec_ctx_)
     throw std::runtime_error(
         "avcodec_alloc_codectx3 AV_CODEC_ID_FFV1 failed\n");
 
-  av_opt_set(ctx->priv_data, "threads", "1", 0);
-  av_opt_set(ctx->priv_data, "g", "1", 0);
+  av_opt_set(this->codec_ctx_->priv_data, "threads", "1", 0);
+  av_opt_set(this->codec_ctx_->priv_data, "g", "1", 0);
 
-  ctx->width = width;
-  ctx->height = height;
-  ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
-  ctx->time_base = (AVRational){1, 25};
-  ctx->framerate = (AVRational){25, 1};
+  this->codec_ctx_->width = width;
+  this->codec_ctx_->height = height;
+  this->codec_ctx_->pix_fmt =
+      num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
+  this->codec_ctx_->time_base = (AVRational){1, 25};
+  this->codec_ctx_->framerate = (AVRational){25, 1};
 
-  ret = avcodec_open2(ctx, this->codec_, NULL);
+  ret = avcodec_open2(this->codec_ctx_, this->codec_, NULL);
   if (ret < 0)
     throw std::runtime_error("Could not open codec");
 
   av_frame_unref(this->frame_);
 
-  this->frame_->format = ctx->pix_fmt;
-  this->frame_->width = ctx->width;
-  this->frame_->height = ctx->height;
+  this->frame_->format = this->codec_ctx_->pix_fmt;
+  this->frame_->width = this->codec_ctx_->width;
+  this->frame_->height = this->codec_ctx_->height;
   this->frame_->pts = 0;
 
   ret = av_frame_get_buffer(this->frame_, 0);
@@ -120,21 +124,20 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
     }
   }
 
-  ret = avcodec_send_frame(ctx, this->frame_);
+  ret = avcodec_send_frame(this->codec_ctx_, this->frame_);
   if (ret < 0)
     throw std::runtime_error("Error sending a frame for encoding");
 
-  ret = avcodec_receive_packet(ctx, this->pkt_);
+  ret = avcodec_receive_packet(this->codec_ctx_, this->pkt_);
   if (ret)
     throw std::runtime_error("Error during encoding");
-
-  avcodec_free_context(&ctx);
 
   libench::CodestreamBuffer cb;
 
   cb.codestream = this->pkt_->data;
-
   cb.size = (size_t)this->pkt_->size;
+  cb.init_data = this->codec_ctx_->extradata;
+  cb.init_data_size = this->codec_ctx_->extradata_size;
 
   return cb;
 }
@@ -179,16 +182,22 @@ libench::FFV1Decoder::~FFV1Decoder() {
 libench::PixelBuffer libench::FFV1Decoder::decodeRGB8(const uint8_t* codestream,
                                                       size_t size,
                                                       uint32_t width,
-                                                      uint32_t height) {
-  return this->decode8(codestream, size, 3, width, height);
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
+  return this->decode8(codestream, size, 3, width, height, init_data,
+                       init_data_size);
 }
 
 libench::PixelBuffer libench::FFV1Decoder::decodeRGBA8(
     const uint8_t* codestream,
     size_t size,
     uint32_t width,
-    uint32_t height) {
-  return this->decode8(codestream, size, 4, width, height);
+    uint32_t height,
+    const uint8_t* init_data,
+    size_t init_data_size) {
+  return this->decode8(codestream, size, 4, width, height, init_data,
+                       init_data_size);
 }
 
 static void null_free(void*, uint8_t*) {}
@@ -197,7 +206,9 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
                                                    size_t size,
                                                    uint8_t num_comps,
                                                    uint32_t width,
-                                                   uint32_t height) {
+                                                   uint32_t height,
+                                                   const uint8_t* init_data,
+                                                   size_t init_data_size) {
   int ret;
   AVCodecContext* ctx;
   uint8_t* pixels;
@@ -213,6 +224,8 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
   ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
   ctx->time_base = (AVRational){1, 25};
   ctx->framerate = (AVRational){25, 1};
+  ctx->extradata = (uint8_t*) init_data;
+  ctx->extradata_size = init_data_size;
 
   ret = avcodec_open2(ctx, this->codec_, NULL);
   if (ret < 0)
@@ -220,12 +233,12 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
 
   av_frame_unref(this->frame_);
 
-  av_packet_unref(this->pkt_);
+  // av_packet_unref(this->pkt_);
 
-  buf = av_buffer_create((uint8_t*)codestream, size, &null_free, NULL,
-                         AV_BUFFER_FLAG_READONLY);
+  /*buf = av_buffer_create((uint8_t*)codestream, size, &null_free, NULL,
+                         AV_BUFFER_FLAG_READONLY);*/
 
-  this->pkt_->buf = buf;
+  // this->pkt_->buf = NULL;
   this->pkt_->data = (uint8_t*)codestream;
   this->pkt_->size = size;
 
@@ -283,6 +296,7 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
     }
   }
 
+  ctx->extradata = NULL; /* this was allocated outside of ffmpeg */
   avcodec_free_context(&ctx);
 
   libench::PixelBuffer pb;

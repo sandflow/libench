@@ -63,8 +63,10 @@ libench::CodestreamBuffer libench::KDUEncoder::encode8(const uint8_t* pixels,
   compressor.push_stripe((kdu_byte*)pixels, stripe_heights);
   compressor.finish();
 
-  libench::CodestreamBuffer cb = {.codestream = this->out_.get_buffer().data(),
-                                  .size = this->out_.get_buffer().size()};
+  libench::CodestreamBuffer cb;
+  
+  cb.codestream = this->out_.get_buffer().data();
+  cb.size = this->out_.get_buffer().size();
 
   return cb;
 }
@@ -78,14 +80,18 @@ libench::KDUDecoder::KDUDecoder(){};
 libench::PixelBuffer libench::KDUDecoder::decodeRGB8(const uint8_t* codestream,
                                                      size_t size,
                                                      uint32_t width,
-                                                     uint32_t height) {
+                                                     uint32_t height,
+                                                     const uint8_t* init_data,
+                                                     size_t init_data_size) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::KDUDecoder::decodeRGBA8(const uint8_t* codestream,
                                                       size_t size,
                                                       uint32_t width,
-                                                      uint32_t height) {
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
   return this->decode8(codestream, size, 4);
 }
 

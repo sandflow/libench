@@ -98,8 +98,10 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
     throw std::runtime_error("Memory error");
   }
 
-  libench::CodestreamBuffer cb = {.codestream = (uint8_t*)this->out_.get_data(),
-                                  .size = (size_t)this->out_.tell()};
+  libench::CodestreamBuffer cb;
+
+  cb.codestream = (uint8_t*)this->out_.get_data();
+  cb.size = (size_t)this->out_.tell();
 
   return cb;
 }
@@ -113,7 +115,9 @@ libench::OJPHDecoder::OJPHDecoder(){};
 libench::PixelBuffer libench::OJPHDecoder::decodeRGB8(const uint8_t* codestream,
                                                       size_t size,
                                                       uint32_t width,
-                                                      uint32_t height) {
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
   return this->decode8(codestream, size, 3);
 }
 
@@ -121,7 +125,9 @@ libench::PixelBuffer libench::OJPHDecoder::decodeRGBA8(
     const uint8_t* codestream,
     size_t size,
     uint32_t width,
-    uint32_t height) {
+    uint32_t height,
+    const uint8_t* init_data,
+    size_t init_data_size) {
   return this->decode8(codestream, size, 4);
 }
 

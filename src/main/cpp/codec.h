@@ -9,6 +9,11 @@ namespace libench {
 struct CodestreamBuffer {
   uint8_t* codestream;
   size_t size;
+  uint8_t* init_data;
+  size_t init_data_size;
+
+  CodestreamBuffer()
+      : codestream(NULL), size(0), init_data(NULL), init_data_size(0) {}
 };
 
 struct PixelBuffer {
@@ -36,12 +41,16 @@ class Decoder {
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
                                  size_t size,
                                  uint32_t width,
-                                 uint32_t height) = 0;
+                                 uint32_t height,
+                                 const uint8_t* init_data,
+                                 size_t init_data_size) = 0;
 
   virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
                                   size_t size,
                                   uint32_t width,
-                                  uint32_t height) = 0;
+                                  uint32_t height,
+                                  const uint8_t* init_data,
+                                  size_t init_data_size) = 0;
 
   virtual ~Decoder() {}
 };

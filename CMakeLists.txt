@@ -98,3 +98,4 @@ add_test(NAME "j2k_ht_kdu" COMMAND libench j2k_ht_kdu ${PROJECT_SOURCE_DIR}/src/
 add_test(NAME "j2k_1_kdu" COMMAND libench j2k_1_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "ffv1-rgba" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)

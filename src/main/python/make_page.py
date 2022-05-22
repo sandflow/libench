@@ -1,9 +1,7 @@
-from asyncio.subprocess import PIPE
-from cgitb import enable
 from datetime import datetime
 from math import ceil
-import os
 import subprocess
+import os
 import os.path
 import argparse
 import json
@@ -201,7 +199,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 def _main():
   parser = argparse.ArgumentParser(description="Generate static web page with lossless coding results.")
   parser.add_argument("images_path", type=str, help="Root path of the image")
-  parser.add_argument("--skip_run", type=bool, default=True, help="Only make the page")
+  parser.add_argument("--skip_run", type=bool, default=False, help="Skip the tests and only make the page")
   parser.add_argument("--build_path", type=str, default="./build/www", help="Path of the build directory")
   parser.add_argument("--bin_path", type=str, default="./build/libench", help="Path of the libench executable")
   parser.add_argument("--version", type=str, default="unknown", help="Version string")
