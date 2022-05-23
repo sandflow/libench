@@ -29,6 +29,23 @@ class Result:
   set_name: str
   run_count: int
 
+@dataclasses.dataclass
+class CodecPreferences:
+  """Preferences for a single codec"""
+  color: str
+  marker: str
+
+# colors from http://www.sussex.ac.uk/tel/resource/tel_website/accessiblecontrast
+CODEC_PREFS = {
+    "j2k_ht_ojph": CodecPreferences(color="#41b6e6", marker="o"),
+    "j2k_1_kdu": CodecPreferences(color="#41b6e6", marker="v"),
+    "j2k_ht_kdu": CodecPreferences(color="#41b6e6", marker="s"),
+    "jxl": CodecPreferences(color="#e56db1", marker="o"),
+    "qoi": CodecPreferences(color="#dc582a", marker="o"),
+    "png": CodecPreferences(color="#f2c75c", marker="o"),
+    "ffv1": CodecPreferences(color="#94a596", marker="o")
+}
+
 def make_index(build_dir_path: str, version_string: str, machine_string: str):
   # build input to template engine
   results = {
@@ -60,7 +77,9 @@ def make_analysis(results_path: str, build_dir_path: str):
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // n_cols, i % n_cols]
     for j in range(len(gdf["encode_time"])):
-      ax.scatter(gdf["encode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, label=gdf["codec_name"].iloc[j])
+      colors = CODEC_PREFS[gdf["codec_name"].iloc[j]].color
+      markers = CODEC_PREFS[gdf["codec_name"].iloc[j]].marker
+      ax.scatter(gdf["encode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, marker=markers, c=colors, label=gdf["codec_name"].iloc[j])
     
     ax.set(ylabel=None)
     ax.set(xlabel=None)
@@ -83,7 +102,8 @@ def make_analysis(results_path: str, build_dir_path: str):
         (r.encode_time, r.coded_size),
         horizontalalignment=h_align,
         xytext=(0, y_offset),
-        textcoords="offset points"
+        textcoords="offset points",
+        c="#555555"
       )
 
   fig.supxlabel("Encode time (s)")
@@ -102,7 +122,9 @@ def make_analysis(results_path: str, build_dir_path: str):
   for (i, (label, gdf)) in enumerate(df_by_set):
     ax = axs[i // n_cols, i % n_cols]
     for j in range(len(gdf["decode_time"])):
-      ax.scatter(gdf["decode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, label=gdf["codec_name"].iloc[j])
+      colors = CODEC_PREFS[gdf["codec_name"].iloc[j]].color
+      markers = CODEC_PREFS[gdf["codec_name"].iloc[j]].marker
+      ax.scatter(gdf["decode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, marker=markers, c=colors, label=gdf["codec_name"].iloc[j])
       
     ax.set(ylabel=None)
     ax.set(xlabel=None)
@@ -125,7 +147,8 @@ def make_analysis(results_path: str, build_dir_path: str):
         (r.decode_time, r.coded_size),
         horizontalalignment=h_align,
         xytext=(0, y_offset),
-        textcoords="offset points"
+        textcoords="offset points",
+        c="#555555"
       )
 
   fig.supxlabel("Decode time (s)")
@@ -164,7 +187,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
       run_count = 3
 
-      for codec_name in ("j2k_ht_ojph", "jxl", "j2k_1_kdu", "qoi", "j2k_ht_kdu", "png", "ffv1"):
+      for codec_name in CODEC_PREFS.keys():
 
         try:
           stdout = json.loads(

@@ -16,3 +16,4 @@ python_version = "3"
 
 [dev-packages]
 pylint = "==2.11.1"
+autopep8 = "*"
