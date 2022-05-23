@@ -108,7 +108,7 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   fig.supxlabel("Encode time (s)")
   fig.supylabel("Coded size (byte)", x=0.01)
-  fig.suptitle('Encoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
+  fig.suptitle('Encoding performance (RGB(A), 8-bit, single thread)', fontsize=16, va="bottom", y=0.99)
   fig.set_dpi(300)
   fig.tight_layout()
   fig.savefig(os.path.join(build_dir_path, "encode-stats.png"))
@@ -154,7 +154,7 @@ def make_analysis(results_path: str, build_dir_path: str):
   fig.supxlabel("Decode time (s)")
   fig.supylabel("Coded size (byte)", x=0.01)
   fig.set_dpi(300)
-  fig.suptitle('Decoding performance (RGB(A), 8-bit)', fontsize=16, va="bottom", y=0.99)
+  fig.suptitle('Decoding performance (RGB(A), 8-bit, single thread)', fontsize=16, va="bottom", y=0.99)
   fig.tight_layout()
   fig.savefig(os.path.join(build_dir_path, "decode-stats.png"))
 
