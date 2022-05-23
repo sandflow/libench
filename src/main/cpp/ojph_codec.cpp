@@ -53,10 +53,6 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 
   ojph::param_cod cod = cs.access_cod();
 
-  cod.set_num_decomposition(6);
-  cod.set_block_dims(128, 32);
-  cod.set_precinct_size(7, IMF_PRECINCTS);
-  cod.set_progression_order("RPCL");
   cod.set_color_transform(num_comps == 3 || num_comps == 4);
   cod.set_reversible(true);
 
@@ -98,8 +94,10 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
     throw std::runtime_error("Memory error");
   }
 
-  libench::CodestreamBuffer cb = {.codestream = (uint8_t*)this->out_.get_data(),
-                                  .size = (size_t)this->out_.tell()};
+  libench::CodestreamBuffer cb;
+
+  cb.codestream = (uint8_t*)this->out_.get_data();
+  cb.size = (size_t)this->out_.tell();
 
   return cb;
 }
@@ -111,13 +109,21 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 libench::OJPHDecoder::OJPHDecoder(){};
 
 libench::PixelBuffer libench::OJPHDecoder::decodeRGB8(const uint8_t* codestream,
-                                                      size_t size) {
+                                                      size_t size,
+                                                      uint32_t width,
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::OJPHDecoder::decodeRGBA8(
     const uint8_t* codestream,
-    size_t size) {
+    size_t size,
+    uint32_t width,
+    uint32_t height,
+    const uint8_t* init_data,
+    size_t init_data_size) {
   return this->decode8(codestream, size, 4);
 }
 
@@ -143,12 +149,10 @@ libench::PixelBuffer libench::OJPHDecoder::decode8(const uint8_t* codestream,
 
   this->pixels_.resize(width * height * num_comps);
 
-
   for (uint32_t i = 0; i < height; ++i) {
     uint8_t* line = &this->pixels_.data()[width * i * num_comps];
 
     for (uint32_t c = 0; c < num_comps; c++) {
-
       ojph::ui32 next_comp = 0;
       ojph::line_buf* cur_line = cs.pull(next_comp);
       assert(next_comp == c);

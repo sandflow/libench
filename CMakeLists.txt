@@ -53,6 +53,27 @@ include_directories(ext/libjxl/experimental/fast_lossless ext/libjxl/lib/include
 add_library(fast_lossless ext/libjxl/experimental/fast_lossless/fast_lossless.cc)
 add_subdirectory(ext/libjxl)
 
+# ffmpeg
+
+#   CONFIGURE_COMMAND ./configure --disable-avdevice --disable-avformat --disable-swresample --disable-swscale --disable-avfilter --disable-doc --disable-programs --prefix=${FFMPEG_INSTALL_DIR}
+
+
+include(ExternalProject)
+set(FFMPEG_INSTALL_DIR ${CMAKE_BINARY_DIR}/ext/ffmpeg)
+ExternalProject_Add(ffmpeg
+  SOURCE_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/ext/ffmpeg
+  CONFIGURE_COMMAND ./configure --disable-avdevice --disable-avformat --disable-swresample --disable-swscale --disable-avfilter --disable-doc --disable-programs --disable-everything --enable-encoder=ffv1 --enable-decoder=ffv1 --prefix=${FFMPEG_INSTALL_DIR}
+  BUILD_COMMAND     make -j${CONCURRENCY}
+  BUILD_IN_SOURCE   TRUE
+)
+include_directories(${PROJECT_BINARY_DIR}/ext/ffmpeg/include)
+add_library(libavcodec STATIC IMPORTED)
+add_dependencies(libavcodec ffmpeg)
+set_target_properties(libavcodec PROPERTIES IMPORTED_LOCATION ${FFMPEG_INSTALL_DIR}/lib/libavcodec.a)
+add_library(libavutil STATIC IMPORTED)
+add_dependencies(libavutil ffmpeg)
+set_target_properties(libavutil PROPERTIES IMPORTED_LOCATION ${FFMPEG_INSTALL_DIR}/lib/libavutil.a)
+
 # md5
 
 include_directories(ext/crypto-algorithms)
@@ -62,23 +83,19 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
 add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
-target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
-
-#if(1)
-#  message("Including Kakadu SDK: ${KDU_LIBRARY}")
-#  target_compile_definitions(libench PRIVATE KDU_PRESENT=${KDU_PRESENT})
-#
-#  target_link_libraries(libench ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
-#endif()
+target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 # tests
 
 enable_testing()
 
-add_test(NAME "ojph" COMMAND libench j2k_ojph ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
-add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
-add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
-add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
-add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/rgba.png)
-add_test(NAME "kdu-ht" COMMAND libench j2k_kduht ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
-add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/test1.png)
+add_test(NAME "j2k_ht_ojph" COMMAND libench j2k_ht_ojph ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
+add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
+add_test(NAME "j2k_ht_kdu" COMMAND libench j2k_ht_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "j2k_1_kdu" COMMAND libench j2k_1_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "ffv1-rgba" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)

@@ -60,9 +60,19 @@ class KDUDecoder : public Decoder {
  public:
   KDUDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
+                                 size_t size,
+                                 uint32_t width,
+                                 uint32_t height,
+                                 const uint8_t* init_data,
+                                 size_t init_data_size);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream, size_t size);
+  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
+                                  size_t size,
+                                  uint32_t width,
+                                  uint32_t height,
+                                 const uint8_t* init_data,
+                                 size_t init_data_size);
 
  private:
   PixelBuffer decode8(const uint8_t* codestream,

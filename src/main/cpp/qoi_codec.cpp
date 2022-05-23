@@ -9,9 +9,7 @@
  * QOIEncoder
  */
 
-libench::QOIEncoder::QOIEncoder() {
-  this->cb_ = {.codestream = NULL, .size = 0};
-};
+libench::QOIEncoder::QOIEncoder() {};
 
 libench::CodestreamBuffer libench::QOIEncoder::encodeRGB8(const uint8_t* pixels,
                                                           uint32_t width,
@@ -50,17 +48,25 @@ libench::CodestreamBuffer libench::QOIEncoder::encode8(const uint8_t* pixels,
  * QOIDecoder
  */
 
-libench::QOIDecoder::QOIDecoder(){
+libench::QOIDecoder::QOIDecoder() {
   this->pb_.pixels = NULL;
 };
 
 libench::PixelBuffer libench::QOIDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size) {
+                                                     size_t size,
+                                                     uint32_t width,
+                                                     uint32_t height,
+                                                     const uint8_t* init_data,
+                                                     size_t init_data_size) {
   return this->decode8(codestream, size, 3);
 }
 
 libench::PixelBuffer libench::QOIDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size) {
+                                                      size_t size,
+                                                      uint32_t width,
+                                                      uint32_t height,
+                                                      const uint8_t* init_data,
+                                                      size_t init_data_size) {
   return this->decode8(codestream, size, 4);
 }
 

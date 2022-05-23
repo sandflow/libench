@@ -1,15 +1,21 @@
-#ifndef LIBENCH_JXL_H
-#define LIBENCH_JXL_H
+#ifndef LIBENCH_FFV1_H
+#define LIBENCH_FFV1_H
 
 #include <vector>
 #include "codec.h"
 
+extern "C" {
+#include "libavcodec/codec.h"
+#include "libavcodec/packet.h"
+#include <libavcodec/avcodec.h>
+}
+
 namespace libench {
 
-template <int E>
-class JXLEncoder : public Encoder {
+class FFV1Encoder : public Encoder {
  public:
-  JXLEncoder();
+  FFV1Encoder();
+  ~FFV1Encoder();
 
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
                                       const uint32_t width,
@@ -24,12 +30,16 @@ class JXLEncoder : public Encoder {
                            uint32_t width,
                            uint32_t height,
                            uint8_t num_comps);
-  CodestreamBuffer cb_;
+  AVPacket* pkt_;
+  AVFrame* frame_;
+  const AVCodec* codec_;
+  AVCodecContext* codec_ctx_;
 };
 
-class JXLDecoder : public Decoder {
+class FFV1Decoder : public Decoder {
  public:
-  JXLDecoder();
+  FFV1Decoder();
+  ~FFV1Decoder();
 
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
                                  size_t size,
@@ -42,14 +52,21 @@ class JXLDecoder : public Decoder {
                                   size_t size,
                                   uint32_t width,
                                   uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+                                  const uint8_t* init_data,
+                                  size_t init_data_size);
 
  private:
   PixelBuffer decode8(const uint8_t* codestream,
                       size_t size,
-                      uint8_t num_comps);
+                      uint8_t num_comps,
+                      uint32_t width,
+                      uint32_t height,
+                      const uint8_t* init_data,
+                      size_t init_data_size);
 
+  AVPacket* pkt_;
+  AVFrame* frame_;
+  const AVCodec* codec_;
   std::vector<uint8_t> pixels_;
 };
 
