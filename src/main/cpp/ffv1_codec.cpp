@@ -51,15 +51,13 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
     throw std::runtime_error(
         "avcodec_alloc_codectx3 AV_CODEC_ID_FFV1 failed\n");
 
-  av_opt_set(this->codec_ctx_->priv_data, "threads", "1", 0);
-  av_opt_set(this->codec_ctx_->priv_data, "g", "1", 0);
-
   this->codec_ctx_->width = width;
   this->codec_ctx_->height = height;
   this->codec_ctx_->pix_fmt =
       num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
   this->codec_ctx_->time_base = (AVRational){1, 25};
   this->codec_ctx_->framerate = (AVRational){25, 1};
+  this->codec_ctx_->thread_count = 1;
 
   ret = avcodec_open2(this->codec_ctx_, this->codec_, NULL);
   if (ret < 0)
@@ -226,6 +224,7 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
   ctx->framerate = (AVRational){25, 1};
   ctx->extradata = (uint8_t*) init_data;
   ctx->extradata_size = init_data_size;
+  ctx->thread_count = 1;
 
   ret = avcodec_open2(ctx, this->codec_, NULL);
   if (ret < 0)
