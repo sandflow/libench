@@ -40,10 +40,11 @@ CODEC_PREFS = {
     "j2k_ht_ojph": CodecPreferences(color="#41b6e6", marker="o"),
     "j2k_1_kdu": CodecPreferences(color="#41b6e6", marker="v"),
     "j2k_ht_kdu": CodecPreferences(color="#41b6e6", marker="s"),
+    "j2k_ht_ohtj2k": CodecPreferences(color="#94a596", marker="p"),
     "jxl": CodecPreferences(color="#e56db1", marker="o"),
     "qoi": CodecPreferences(color="#dc582a", marker="o"),
     "png": CodecPreferences(color="#f2c75c", marker="o"),
-    "ffv1": CodecPreferences(color="#94a596", marker="o")
+    "ffv1": CodecPreferences(color="#94a596", marker="o"),
 }
 
 def make_index(build_dir_path: str, version_string: str, machine_string: str):
