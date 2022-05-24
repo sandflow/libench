@@ -23,3 +23,6 @@
 	path = ext/ffmpeg
 	url = https://github.com/FFmpeg/FFmpeg.git
 	shallow = true
+[submodule "ext/OpenHTJ2K"]
+	path = ext/OpenHTJ2K
+	url = https://github.com/osamu620/OpenHTJ2K
