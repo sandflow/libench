@@ -5,11 +5,12 @@
 #include <memory>
 #include <stdexcept>
 
+constexpr uint32_t NUMTHREADS = 1;
 /*
  * OHTJ2KEncoder
  */
 
-libench::OHTJ2KEncoder::OHTJ2KEncoder() : num_threads(0){};
+libench::OHTJ2KEncoder::OHTJ2KEncoder() : num_threads(NUMTHREADS){};
 
 libench::CodestreamBuffer libench::OHTJ2KEncoder::encodeRGB8(
     const uint8_t* pixels, uint32_t width, uint32_t height) {
@@ -118,7 +119,7 @@ libench::CodestreamBuffer libench::OHTJ2KEncoder::encode8(const uint8_t* pixels,
  * OHTJ2KDecoder
  */
 
-libench::OHTJ2KDecoder::OHTJ2KDecoder() : num_threads(0){};
+libench::OHTJ2KDecoder::OHTJ2KDecoder() : num_threads(NUMTHREADS){};
 
 libench::PixelBuffer libench::OHTJ2KDecoder::decodeRGB8(
     const uint8_t* codestream, size_t size, uint32_t width, uint32_t height,

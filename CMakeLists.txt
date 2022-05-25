@@ -105,3 +105,4 @@ add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources
 add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1-rgba" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 add_test(NAME "j2k_ht_ohtj2k" COMMAND libench j2k_ht_ohtj2k ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "j2k_ht_ohtj2ka" COMMAND libench j2k_ht_ohtj2k ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
