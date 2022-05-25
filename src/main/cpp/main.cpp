@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <chrono>
 #include "cxxopts.hpp"
 extern "C" {
 #include "md5.h"
@@ -26,8 +27,8 @@ struct CodestreamContext {
   std::string codestream_path;
   uint32_t image_sz;
   uint32_t codestream_sz;
-  std::vector<clock_t> encode_times;
-  std::vector<clock_t> decode_times;
+  std::vector<std::chrono::system_clock::time_point::duration> encode_times;
+  std::vector<std::chrono::system_clock::time_point::duration> decode_times;
 };
 
 std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
@@ -35,7 +36,7 @@ std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
 
   os << "\"decodeTimes\" : [";
   for (const auto& t : ctx.decode_times) {
-    os << ((double)t / CLOCKS_PER_SEC);
+    os << std::chrono::duration<double>(t).count();
     if (&t != &ctx.decode_times.back()) {
       os << ", ";
     }
@@ -44,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
 
   os << "\"encodeTimes\" : [";
   for (const auto& t : ctx.encode_times) {
-    os << ((double)t / CLOCKS_PER_SEC);
+    os << std::chrono::duration<double>(t).count();
     if (&t != &ctx.encode_times.back()) {
       os << ", ";
     }
@@ -152,7 +153,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < repetitions; i++) {
     libench::CodestreamBuffer cb;
 
-    auto start = clock();
+    auto start = std::chrono::high_resolution_clock::now();
 
     switch (num_comps) {
       case 3:
@@ -165,7 +166,7 @@ int main(int argc, char* argv[]) {
         throw std::runtime_error("Unsupported number of components");
     }
 
-    ctx.encode_times[i] = clock() - start;
+    ctx.encode_times[i] = std::chrono::high_resolution_clock::now() - start;
 
     if (i == 0) {
       ctx.codestream_sz = cb.size + cb.init_data_size;
@@ -195,7 +196,7 @@ int main(int argc, char* argv[]) {
 
     libench::PixelBuffer pb;
 
-    start = clock();
+    start = std::chrono::high_resolution_clock::now();
 
     switch (num_comps) {
       case 3:
@@ -208,7 +209,7 @@ int main(int argc, char* argv[]) {
         throw std::runtime_error("Unsupported number of components");
     }
 
-    ctx.decode_times[i] = clock() - start;
+    ctx.decode_times[i] = std::chrono::high_resolution_clock::now() - start;
 
     /*std::ofstream out_raw(filepath + "." + result["codec"].as<std::string>() + ".out.raw");
     out_raw.write((const char*) pb.pixels, width * height * num_comps);
