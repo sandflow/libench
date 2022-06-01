@@ -11,6 +11,7 @@ namespace libench {
 class QOIEncoder : public Encoder {
  public:
   QOIEncoder();
+  ~QOIEncoder();
 
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
                                       const uint32_t width,
@@ -31,6 +32,7 @@ class QOIEncoder : public Encoder {
 class QOIDecoder : public Decoder {
  public:
   QOIDecoder();
+  ~QOIDecoder();
 
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
                                  size_t size,

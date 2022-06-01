@@ -21,6 +21,11 @@ template <int E>
 libench::JXLEncoder<E>::JXLEncoder(){};
 
 template <int E>
+libench::JXLEncoder<E>::~JXLEncoder() {
+  free(this->cb_.codestream);
+};
+
+template <int E>
 libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(
     const uint8_t* pixels,
     uint32_t width,

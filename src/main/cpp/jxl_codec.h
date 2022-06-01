@@ -10,6 +10,7 @@ template <int E>
 class JXLEncoder : public Encoder {
  public:
   JXLEncoder();
+  virtual ~JXLEncoder();
 
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
                                       const uint32_t width,
@@ -30,6 +31,7 @@ class JXLEncoder : public Encoder {
 class JXLDecoder : public Decoder {
  public:
   JXLDecoder();
+
 
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
                                  size_t size,

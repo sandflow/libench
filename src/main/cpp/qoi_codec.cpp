@@ -11,6 +11,10 @@
 
 libench::QOIEncoder::QOIEncoder() {};
 
+libench::QOIEncoder::~QOIEncoder() {
+  free(this->cb_.codestream);
+};
+
 libench::CodestreamBuffer libench::QOIEncoder::encodeRGB8(const uint8_t* pixels,
                                                           uint32_t width,
                                                           uint32_t height) {
@@ -50,6 +54,10 @@ libench::CodestreamBuffer libench::QOIEncoder::encode8(const uint8_t* pixels,
 
 libench::QOIDecoder::QOIDecoder() {
   this->pb_.pixels = NULL;
+};
+
+libench::QOIDecoder::~QOIDecoder() {
+  free(this->pb_.pixels);
 };
 
 libench::PixelBuffer libench::QOIDecoder::decodeRGB8(const uint8_t* codestream,

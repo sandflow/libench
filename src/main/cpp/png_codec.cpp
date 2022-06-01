@@ -8,6 +8,9 @@
  */
 
 libench::PNGEncoder::PNGEncoder() {};
+libench::PNGEncoder::~PNGEncoder() {
+  free(this->cb_.codestream);
+};
 
 libench::CodestreamBuffer libench::PNGEncoder::encodeRGB8(const uint8_t* pixels,
                                                           uint32_t width,
@@ -46,6 +49,10 @@ libench::CodestreamBuffer libench::PNGEncoder::encode8(const uint8_t* pixels,
 
 libench::PNGDecoder::PNGDecoder() {
   this->pb_.pixels = NULL;
+};
+
+libench::PNGDecoder::~PNGDecoder() {
+  free(this->pb_.pixels);
 };
 
 libench::PixelBuffer libench::PNGDecoder::decodeRGB8(const uint8_t* codestream,

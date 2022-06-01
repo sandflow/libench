@@ -11,6 +11,7 @@ namespace libench {
 class PNGEncoder : public Encoder {
  public:
   PNGEncoder();
+  ~PNGEncoder();
 
   virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
                                       const uint32_t width,
@@ -31,6 +32,7 @@ class PNGEncoder : public Encoder {
 class PNGDecoder : public Decoder {
  public:
   PNGDecoder();
+  ~PNGDecoder();
 
   virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
                                  size_t size,
