@@ -46,12 +46,13 @@ CODEC_PREFS = {
     "ffv1": CodecPreferences(color="#94a596", marker="o")
 }
 
-def make_index(build_dir_path: str, version_string: str, machine_string: str):
+def make_index(build_dir_path: str, version_string: str, machine_string: str, compiler_string: str):
   # build input to template engine
   results = {
     "date": datetime.now().isoformat(),
     "version": version_string,
-    "machine": machine_string
+    "machine": machine_string,
+    "compiler": compiler_string
   }
 
   # apply template
@@ -228,6 +229,7 @@ def _main():
   parser.add_argument("--bin_path", type=str, default="./build/libench", help="Path of the libench executable")
   parser.add_argument("--version", type=str, default="unknown", help="Version string")
   parser.add_argument("--machine", type=str, default="unknown", help="Machine string")
+  parser.add_argument("--compiler", type=str, default="unknown", help="Compiler version")
   args = parser.parse_args()
 
   os.makedirs(args.build_path, exist_ok=True)
@@ -247,7 +249,7 @@ def _main():
 
   make_analysis(results_path, args.build_path)
 
-  make_index(args.build_path, args.version, args.machine)
+  make_index(args.build_path, args.version, args.machine, args.compiler)
 
 if __name__ == "__main__":
   _main()
