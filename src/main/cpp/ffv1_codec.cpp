@@ -34,14 +34,18 @@ libench::FFV1Encoder::FFV1Encoder() {
 }
 
 libench::FFV1Encoder::~FFV1Encoder() {
+  av_packet_unref(this->pkt_);
+  av_frame_unref(this->frame_);
   av_packet_free(&this->pkt_);
   av_frame_free(&this->frame_);
+  avcodec_free_context(&this->codec_ctx_);
 }
 
 libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
                                                         uint32_t width,
                                                         uint32_t height,
                                                         uint8_t num_comps) {
+  AVCodecContext* codec_ctx_;
   int ret;
 
   avcodec_free_context(&this->codec_ctx_);
@@ -63,6 +67,7 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
   if (ret < 0)
     throw std::runtime_error("Could not open codec");
 
+  av_packet_unref(this->pkt_);
   av_frame_unref(this->frame_);
 
   this->frame_->format = this->codec_ctx_->pix_fmt;
