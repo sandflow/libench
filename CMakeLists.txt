@@ -74,6 +74,11 @@ add_library(libavutil STATIC IMPORTED)
 add_dependencies(libavutil ffmpeg)
 set_target_properties(libavutil PROPERTIES IMPORTED_LOCATION ${FFMPEG_INSTALL_DIR}/lib/libavutil.a)
 
+# OpenHTJ2K support
+
+add_subdirectory(ext/OpenHTJ2K)
+include_directories(ext/OpenHTJ2K/src/core/interface)
+
 # md5
 
 include_directories(ext/crypto-algorithms)
@@ -83,7 +88,7 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
 add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
-target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless libavcodec libavutil open_htj2k ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 # tests
 
@@ -99,3 +104,5 @@ add_test(NAME "j2k_1_kdu" COMMAND libench j2k_1_kdu ${PROJECT_SOURCE_DIR}/src/te
 add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1-rgba" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
+add_test(NAME "j2k_ht_ohtj2k" COMMAND libench j2k_ht_ohtj2k ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "j2k_ht_ohtj2ka" COMMAND libench j2k_ht_ohtj2k ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)

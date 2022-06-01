@@ -15,6 +15,7 @@ extern "C" {
 #include "kduht_codec.h"
 #include "png_codec.h"
 #include "ffv1_codec.h"
+#include "ohtj2k_codec.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_ONLY_PNG
@@ -83,6 +84,9 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "qoi") {
     encoder.reset(new libench::QOIEncoder());
     decoder.reset(new libench::QOIDecoder());
+  } else if (result["codec"].as<std::string>() == "j2k_ht_ohtj2k") {
+    encoder.reset(new libench::OHTJ2KEncoder());
+    decoder.reset(new libench::OHTJ2KDecoder());
   } else if (result["codec"].as<std::string>() == "jxl") {
     encoder.reset(new libench::JXLEncoder<2>());
     decoder.reset(new libench::JXLDecoder());
