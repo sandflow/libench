@@ -82,9 +82,6 @@ libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
 
   pb.num_comps = num_comps;
 
-  // Multi-threaded parallel runner.
-  auto runner = JxlResizableParallelRunnerMake(nullptr);
-
   auto dec = JxlDecoderMake(nullptr);
   if (JXL_DEC_SUCCESS !=
       JxlDecoderSubscribeEvents(dec.get(), JXL_DEC_BASIC_INFO |
@@ -93,9 +90,7 @@ libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
     throw std::runtime_error("JxlDecoderSubscribeEvents failed\n");
   }
 
-  if (JXL_DEC_SUCCESS != JxlDecoderSetParallelRunner(dec.get(),
-                                                     JxlResizableParallelRunner,
-                                                     runner.get())) {
+  if (JXL_DEC_SUCCESS != JxlDecoderSetParallelRunner(dec.get(), NULL, NULL)) {
     throw std::runtime_error("JxlDecoderSetParallelRunner failed\n");
   }
 
@@ -118,9 +113,6 @@ libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
       }
       pb.width = info.xsize;
       pb.height = info.ysize;
-      JxlResizableParallelRunnerSetThreads(
-          runner.get(),
-          JxlResizableParallelRunnerSuggestThreads(info.xsize, info.ysize));
     } else if (status == JXL_DEC_COLOR_ENCODING) {
       // Get the ICC color profile of the pixel data (but ignore it)
       size_t icc_size;
