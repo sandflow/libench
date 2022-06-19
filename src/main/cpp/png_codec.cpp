@@ -9,7 +9,7 @@
 
 libench::PNGEncoder::PNGEncoder() {};
 libench::PNGEncoder::~PNGEncoder() {
-  free(this->cb_.codestream);
+  free(this->cs_.codestream);
 };
 
 libench::CodestreamContext libench::PNGEncoder::encodeRGB8(const ImageContext &image) {
@@ -23,16 +23,16 @@ libench::CodestreamContext libench::PNGEncoder::encodeRGBA8(const ImageContext &
 libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &image) {
   int ret;
 
-  free(this->cb_.codestream);
+  free(this->cs_.codestream);
 
-  ret = lodepng_encode_memory(&this->cb_.codestream, &this->cb_.size, image.planes8[0],
+  ret = lodepng_encode_memory(&this->cs_.codestream, &this->cs_.size, image.planes8[0],
                               image.width, image.height,
                               image.num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
 
   if (ret)
     throw std::runtime_error("PNG decode failed");
 
-  return this->cb_;
+  return this->cs_;
 }
 
 /*
@@ -40,12 +40,12 @@ libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &imag
  */
 
 libench::PNGDecoder::PNGDecoder() {
-    this->pb_.bit_depth = 8;
-    this->pb_.num_planes = 1;
+    this->image_.bit_depth = 8;
+    this->image_.num_planes = 1;
 };
 
 libench::PNGDecoder::~PNGDecoder() {
-  free(this->pb_.planes8[0]);
+  free(this->image_.planes8[0]);
 };
 
 libench::ImageContext libench::PNGDecoder::decodeRGB8(const CodestreamContext& cs) {
@@ -59,16 +59,16 @@ libench::ImageContext libench::PNGDecoder::decodeRGBA8(const CodestreamContext& 
 libench::ImageContext libench::PNGDecoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
   int ret;
 
-  free(this->pb_.planes8[0]);
+  free(this->image_.planes8[0]);
 
-  this->pb_.num_comps = num_comps;
+  this->image_.num_comps = num_comps;
 
-  ret = lodepng_decode_memory(&this->pb_.planes8[0], &this->pb_.width,
-                              &this->pb_.height, cs.codestream, cs.size,
+  ret = lodepng_decode_memory(&this->image_.planes8[0], &this->image_.width,
+                              &this->image_.height, cs.codestream, cs.size,
                               num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
 
   if (ret)
     throw std::runtime_error("PNG decode failed");
 
-  return this->pb_;
+  return this->image_;
 }

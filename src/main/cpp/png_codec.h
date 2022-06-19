@@ -20,7 +20,7 @@ class PNGEncoder : public Encoder {
  private:
   CodestreamContext encode8(const ImageContext &image);
 
-  CodestreamContext cb_;
+  CodestreamContext cs_;
 };
 
 class PNGDecoder : public Decoder {
@@ -35,7 +35,7 @@ class PNGDecoder : public Decoder {
  private:
   ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
 
-  ImageContext pb_;
+  ImageContext image_;
 };
 
 }  // namespace libench
