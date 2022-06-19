@@ -16,27 +16,19 @@ using namespace kdu_supp;
 
 libench::KDUEncoder::KDUEncoder(bool isHT) : isHT_(isHT){};
 
-libench::CodestreamBuffer libench::KDUEncoder::encodeRGB8(const uint8_t* pixels,
-                                                          uint32_t width,
-                                                          uint32_t height) {
-  return this->encode8(pixels, width, height, 3);
+libench::CodestreamContext libench::KDUEncoder::encodeRGB8(const ImageContext &image) {
+  return this->encode8(image, 3);
 }
 
-libench::CodestreamBuffer libench::KDUEncoder::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 4);
+libench::CodestreamContext libench::KDUEncoder::encodeRGBA8(const ImageContext &image) {
+  return this->encode8(image, 4);
 }
 
-libench::CodestreamBuffer libench::KDUEncoder::encode8(const uint8_t* pixels,
-                                                       uint32_t width,
-                                                       uint32_t height,
-                                                       uint8_t num_comps) {
+libench::CodestreamContext libench::KDUEncoder::encode8(const ImageContext &image, uint8_t num_comps) {
   siz_params siz;
   siz.set(Scomponents, 0, 0, num_comps);
-  siz.set(Sdims, 0, 0, static_cast<int>(height));
-  siz.set(Sdims, 0, 1, static_cast<int>(width));
+  siz.set(Sdims, 0, 0, static_cast<int>(image.height));
+  siz.set(Sdims, 0, 1, static_cast<int>(image.width));
   siz.set(Sprecision, 0, 0, 8);
   siz.set(Ssigned, 0, 0, false);
   static_cast<kdu_params&>(siz).finalize();
@@ -59,11 +51,11 @@ libench::CodestreamBuffer libench::KDUEncoder::encode8(const uint8_t* pixels,
   kdu_stripe_compressor compressor;
   compressor.start(codestream, 0, NULL, NULL, 0, false, false, false, 0, 0,
                    true);
-  int stripe_heights[4] = {(int)height, (int)height, (int)height, (int)height};
-  compressor.push_stripe((kdu_byte*)pixels, stripe_heights);
+  int stripe_heights[4] = {(int)image.height, (int)image.height, (int)image.height, (int)image.height};
+  compressor.push_stripe((kdu_byte*)image.planes8[0], stripe_heights);
   compressor.finish();
 
-  libench::CodestreamBuffer cb;
+  libench::CodestreamContext cb;
   
   cb.codestream = this->out_.get_buffer().data();
   cb.size = this->out_.get_buffer().size();
@@ -77,28 +69,16 @@ libench::CodestreamBuffer libench::KDUEncoder::encode8(const uint8_t* pixels,
 
 libench::KDUDecoder::KDUDecoder(){};
 
-libench::PixelBuffer libench::KDUDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size,
-                                                     uint32_t width,
-                                                     uint32_t height,
-                                                     const uint8_t* init_data,
-                                                     size_t init_data_size) {
-  return this->decode8(codestream, size, 3);
+libench::ImageContext libench::KDUDecoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs, 3);
 }
 
-libench::PixelBuffer libench::KDUDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 4);
+libench::ImageContext libench::KDUDecoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs, 4);
 }
 
-libench::PixelBuffer libench::KDUDecoder::decode8(const uint8_t* codestream,
-                                                  size_t size,
-                                                  uint8_t num_comps) {
-  kdu_compressed_source_buffered buffer((kdu_byte*)codestream, size);
+libench::ImageContext libench::KDUDecoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
+  kdu_compressed_source_buffered buffer((kdu_byte*)cs.codestream, cs.size);
 
   kdu_codestream c;
 
@@ -122,10 +102,14 @@ libench::PixelBuffer libench::KDUDecoder::decode8(const uint8_t* codestream,
 
   d.finish();
 
-  libench::PixelBuffer pb = {.height = (uint32_t)height,
-                             .width = (uint32_t)width,
-                             .num_comps = num_comps,
-                             .pixels = this->pixels_.data()};
+  libench::ImageContext pb;
+  
+  pb.height = (uint32_t)height;
+  pb.width = (uint32_t)width;
+  pb.num_comps = num_comps;
+  pb.bit_depth = 8;
+  pb.num_planes = 1;
+  pb.planes8[0] = this->pixels_.data();
 
   return pb;
 }

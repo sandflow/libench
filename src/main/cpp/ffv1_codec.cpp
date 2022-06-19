@@ -41,11 +41,7 @@ libench::FFV1Encoder::~FFV1Encoder() {
   avcodec_free_context(&this->codec_ctx_);
 }
 
-libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
-                                                        uint32_t width,
-                                                        uint32_t height,
-                                                        uint8_t num_comps) {
-  AVCodecContext* codec_ctx_;
+libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &image, uint8_t num_comps) {
   int ret;
 
   avcodec_free_context(&this->codec_ctx_);
@@ -55,8 +51,8 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
     throw std::runtime_error(
         "avcodec_alloc_codectx3 AV_CODEC_ID_FFV1 failed\n");
 
-  this->codec_ctx_->width = width;
-  this->codec_ctx_->height = height;
+  this->codec_ctx_->width = image.width;
+  this->codec_ctx_->height = image.height;
   this->codec_ctx_->pix_fmt =
       num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
   this->codec_ctx_->time_base = (AVRational){1, 25};
@@ -84,11 +80,11 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
     throw std::runtime_error("Frame is not writable");
 
   if (num_comps == 3) {
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < image.height; i++) {
       uint8_t* dst_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      const uint8_t* src_line = pixels + (i * width * num_comps);
-      for (int j = 0; j < width; j++) {
+      const uint8_t* src_line = image.planes8[0] + (i * image.width * num_comps);
+      for (int j = 0; j < image.width; j++) {
 #if HAVE_BIGENDIAN
         /* RGB -> 0RGB */
         dst_line[4 * j + 0] = 255;
@@ -105,11 +101,11 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
       }
     }
   } else {
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < image.height; i++) {
       uint8_t* dst_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      const uint8_t* src_line = pixels + (i * width * num_comps);
-      for (int j = 0; j < width; j++) {
+      const uint8_t* src_line = image.planes8[0] + (i * image.width * num_comps);
+      for (int j = 0; j < image.width; j++) {
 #if HAVE_BIGENDIAN
         /* RGBA -> ARGB */
         dst_line[4 * j + 0] = src_line[4 * j + 3];
@@ -135,28 +131,22 @@ libench::CodestreamBuffer libench::FFV1Encoder::encode8(const uint8_t* pixels,
   if (ret)
     throw std::runtime_error("Error during encoding");
 
-  libench::CodestreamBuffer cb;
+  libench::CodestreamContext cb;
 
   cb.codestream = this->pkt_->data;
   cb.size = (size_t)this->pkt_->size;
-  cb.init_data = this->codec_ctx_->extradata;
-  cb.init_data_size = this->codec_ctx_->extradata_size;
+  cb.state = this->codec_ctx_;
+  cb.state_size = this->codec_ctx_->extradata_size + sizeof(this->codec_ctx_->height) + sizeof(this->codec_ctx_->width);
 
   return cb;
 }
 
-libench::CodestreamBuffer libench::FFV1Encoder::encodeRGB8(
-    const uint8_t* pixels,
-    const uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 3);
+libench::CodestreamContext libench::FFV1Encoder::encodeRGB8(const ImageContext &image) {
+  return this->encode8(image, 3);
 }
 
-libench::CodestreamBuffer libench::FFV1Encoder::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 4);
+libench::CodestreamContext libench::FFV1Encoder::encodeRGBA8(const ImageContext &image) {
+  return this->encode8(image, 4);
 }
 
 /*
@@ -182,38 +172,20 @@ libench::FFV1Decoder::~FFV1Decoder() {
   av_frame_free(&this->frame_);
 }
 
-libench::PixelBuffer libench::FFV1Decoder::decodeRGB8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 3, width, height, init_data,
-                       init_data_size);
+libench::ImageContext libench::FFV1Decoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs, 3);
 }
 
-libench::PixelBuffer libench::FFV1Decoder::decodeRGBA8(
-    const uint8_t* codestream,
-    size_t size,
-    uint32_t width,
-    uint32_t height,
-    const uint8_t* init_data,
-    size_t init_data_size) {
-  return this->decode8(codestream, size, 4, width, height, init_data,
-                       init_data_size);
+libench::ImageContext libench::FFV1Decoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs, 4);
 }
 
 static void null_free(void*, uint8_t*) {}
 
-libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
-                                                   size_t size,
-                                                   uint8_t num_comps,
-                                                   uint32_t width,
-                                                   uint32_t height,
-                                                   const uint8_t* init_data,
-                                                   size_t init_data_size) {
+libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
   int ret;
   AVCodecContext* ctx;
+  AVCodecContext* encoder_ctx = (AVCodecContext*) cs.state;
   uint8_t* pixels;
   AVBufferRef* buf;
 
@@ -222,13 +194,13 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
     throw std::runtime_error(
         "avcodec_alloc_codectx3 AV_CODEC_ID_FFV1 failed\n");
 
-  ctx->width = width;
-  ctx->height = height;
+  ctx->width = encoder_ctx->width;
+  ctx->height = encoder_ctx->height;
   ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
   ctx->time_base = (AVRational){1, 25};
   ctx->framerate = (AVRational){25, 1};
-  ctx->extradata = (uint8_t*) init_data;
-  ctx->extradata_size = init_data_size;
+  ctx->extradata = encoder_ctx->extradata;
+  ctx->extradata_size = encoder_ctx->extradata_size;
   ctx->thread_count = 1;
 
   ret = avcodec_open2(ctx, this->codec_, NULL);
@@ -243,8 +215,8 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
                          AV_BUFFER_FLAG_READONLY);*/
 
   // this->pkt_->buf = NULL;
-  this->pkt_->data = (uint8_t*)codestream;
-  this->pkt_->size = size;
+  this->pkt_->data = (uint8_t*)cs.codestream;
+  this->pkt_->size = cs.size;
 
   ret = avcodec_send_packet(ctx, this->pkt_);
   if (ret < 0)
@@ -259,11 +231,11 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
   pixels = this->pixels_.data();
 
   if (num_comps == 3) {
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      uint8_t* dst_line = pixels + (i * width * num_comps);
-      for (int j = 0; j < width; j++) {
+      uint8_t* dst_line = pixels + (i * ctx->width * num_comps);
+      for (int j = 0; j < ctx->width; j++) {
 #if HAVE_BIGENDIAN
         /* 0RGB -> RGB */
         dst_line[3 * j + 0] = src_line[4 * j + 1];
@@ -278,11 +250,11 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
       }
     }
   } else {
-    for (int i = 0; i < height; i++) {
+    for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      uint8_t* dst_line = pixels + (i * width * num_comps);
-      for (int j = 0; j < width; j++) {
+      uint8_t* dst_line = pixels + (i * ctx->width * num_comps);
+      for (int j = 0; j < ctx->width; j++) {
 #if HAVE_BIGENDIAN
         /* ARGB -> RGBA */
         dst_line[4 * j + 0] = src_line[4 * j + 1];
@@ -303,12 +275,14 @@ libench::PixelBuffer libench::FFV1Decoder::decode8(const uint8_t* codestream,
   ctx->extradata = NULL; /* this was allocated outside of ffmpeg */
   avcodec_free_context(&ctx);
 
-  libench::PixelBuffer pb;
+  libench::ImageContext image;
 
-  pb.num_comps = num_comps;
-  pb.pixels = this->pixels_.data();
-  pb.height = this->frame_->height;
-  pb.width = this->frame_->width;
+  image.num_comps = num_comps;
+  image.bit_depth = 8;
+  image.num_planes = 1;
+  image.planes8[0] = this->pixels_.data();
+  image.height = this->frame_->height;
+  image.width = this->frame_->width;
 
-  return pb;
+  return image;
 }

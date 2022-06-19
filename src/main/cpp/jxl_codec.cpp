@@ -26,26 +26,20 @@ libench::JXLEncoder<E>::~JXLEncoder() {
 };
 
 template <int E>
-libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGB8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
+libench::CodestreamContext libench::JXLEncoder<E>::encodeRGB8(const ImageContext &image) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 3, height, 3, 8, E,
+  this->cb_.size = FastLosslessEncode(image.planes8[0], image.width, image.width * 3, image.height, 3, 8, E,
                                       &this->cb_.codestream);
 
   return this->cb_;
 }
 
 template <int E>
-libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
+libench::CodestreamContext libench::JXLEncoder<E>::encodeRGBA8(const ImageContext &image) {
   free(this->cb_.codestream);
 
-  this->cb_.size = FastLosslessEncode(pixels, width, width * 4, height, 4, 8, E,
+  this->cb_.size = FastLosslessEncode(image.planes8[0], image.width, image.width * 4, image.height, 4, 8, E,
                                       &this->cb_.codestream);
 
   return this->cb_;
@@ -57,30 +51,20 @@ libench::CodestreamBuffer libench::JXLEncoder<E>::encodeRGBA8(
 
 libench::JXLDecoder::JXLDecoder(){};
 
-libench::PixelBuffer libench::JXLDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size,
-                                                     uint32_t width,
-                                                     uint32_t height,
-                                                     const uint8_t* init_data,
-                                                     size_t init_data_size) {
-  return this->decode8(codestream, size, 3);
+libench::ImageContext libench::JXLDecoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs, 3);
 }
 
-libench::PixelBuffer libench::JXLDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 4);
+libench::ImageContext libench::JXLDecoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs, 4);
 }
 
-libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
-                                                  size_t size,
-                                                  uint8_t num_comps) {
-  libench::PixelBuffer pb;
+libench::ImageContext libench::JXLDecoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
+  libench::ImageContext pb;
 
   pb.num_comps = num_comps;
+  pb.num_planes = 1;
+  pb.bit_depth = 8;
 
   // Multi-threaded parallel runner.
   auto runner = JxlResizableParallelRunnerMake(nullptr);
@@ -102,7 +86,7 @@ libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
   JxlBasicInfo info;
   JxlPixelFormat format = {num_comps, JXL_TYPE_UINT8, JXL_NATIVE_ENDIAN, 0};
 
-  JxlDecoderSetInput(dec.get(), codestream, size);
+  JxlDecoderSetInput(dec.get(), cs.codestream, cs.size);
   JxlDecoderCloseInput(dec.get());
 
   for (;;) {
@@ -166,7 +150,7 @@ libench::PixelBuffer libench::JXLDecoder::decode8(const uint8_t* codestream,
     }
   }
 
-  pb.pixels = this->pixels_.data();
+  pb.planes8[0] = this->pixels_.data();
 
   return pb;
 }

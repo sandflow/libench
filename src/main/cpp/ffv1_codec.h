@@ -17,19 +17,13 @@ class FFV1Encoder : public Encoder {
   FFV1Encoder();
   ~FFV1Encoder();
 
-  virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                      const uint32_t width,
-                                      uint32_t height);
+  CodestreamContext encodeRGB8(const ImageContext &image);
 
-  virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                       uint32_t width,
-                                       uint32_t height);
+  CodestreamContext encodeRGBA8(const ImageContext &image);
 
  private:
-  CodestreamBuffer encode8(const uint8_t* pixels,
-                           uint32_t width,
-                           uint32_t height,
-                           uint8_t num_comps);
+  CodestreamContext encode8(const ImageContext &image, uint8_t num_comps);
+
   AVPacket* pkt_;
   AVFrame* frame_;
   const AVCodec* codec_;
@@ -40,29 +34,13 @@ class FFV1Decoder : public Decoder {
  public:
   FFV1Decoder();
   ~FFV1Decoder();
+  
+  virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
-                                 size_t size,
-                                 uint32_t width,
-                                 uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
-
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
-                                  size_t size,
-                                  uint32_t width,
-                                  uint32_t height,
-                                  const uint8_t* init_data,
-                                  size_t init_data_size);
+  virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
  private:
-  PixelBuffer decode8(const uint8_t* codestream,
-                      size_t size,
-                      uint8_t num_comps,
-                      uint32_t width,
-                      uint32_t height,
-                      const uint8_t* init_data,
-                      size_t init_data_size);
+  ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
 
   AVPacket* pkt_;
   AVFrame* frame_;

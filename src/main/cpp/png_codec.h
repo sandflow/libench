@@ -13,20 +13,14 @@ class PNGEncoder : public Encoder {
   PNGEncoder();
   ~PNGEncoder();
 
-  virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                      const uint32_t width,
-                                      uint32_t height);
+  CodestreamContext encodeRGB8(const ImageContext &image);
 
-  virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                       uint32_t width,
-                                       uint32_t height);
+  CodestreamContext encodeRGBA8(const ImageContext &image);
 
  private:
-  CodestreamBuffer encode8(const uint8_t* pixels,
-                           uint32_t width,
-                           uint32_t height,
-                           uint8_t num_comps);
-  CodestreamBuffer cb_;
+  CodestreamContext encode8(const ImageContext &image);
+
+  CodestreamContext cb_;
 };
 
 class PNGDecoder : public Decoder {
@@ -34,26 +28,14 @@ class PNGDecoder : public Decoder {
   PNGDecoder();
   ~PNGDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
-                                 size_t size,
-                                 uint32_t width,
-                                 uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+  virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
-                                  size_t size,
-                                  uint32_t width,
-                                  uint32_t height,
-                                  const uint8_t* init_data,
-                                  size_t init_data_size);
+  virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
  private:
-  PixelBuffer decode8(const uint8_t* codestream,
-                      size_t size,
-                      uint8_t num_comps);
+  ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
 
-  PixelBuffer pb_;
+  ImageContext pb_;
 };
 
 }  // namespace libench
