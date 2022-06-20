@@ -45,7 +45,7 @@ class FFV1Decoder : public Decoder {
   AVPacket* pkt_;
   AVFrame* frame_;
   const AVCodec* codec_;
-  std::vector<uint8_t> pixels_;
+  std::vector<uint8_t> planes_[3];
 };
 
 }  // namespace libench

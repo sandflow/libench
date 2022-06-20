@@ -28,6 +28,10 @@ struct ImageComponents {
 
   ImageComponents() {}
 
+  bool operator==(const ImageComponents& other) const {
+    return &other == this || other.name == this->name;
+  }
+
   static ImageComponents RGBA;
   static ImageComponents RGB;
   static ImageComponents YUV;
@@ -68,7 +72,7 @@ struct ImageContext {
 
   ImageContext() : planes8 {NULL} {}
 
-  int component_size() {
+  int component_size() const {
     return this->is_plane16() ? 2 : 1;
   }
 
@@ -76,7 +80,7 @@ struct ImageContext {
     return this->format.bit_depth > 8;
   }
 
-  size_t plane_size(int i) {
+  size_t plane_size(int i) const {
     if (this->format.is_planar) {
       return this->width * this->height * this->component_size() / this->format.x_sub_factor[i] / this->format.y_sub_factor[i];
     } else {
@@ -84,7 +88,20 @@ struct ImageContext {
     }
   }
 
-  size_t total_bits() {
+  uint32_t plane_height(int i) const {
+    return this->height / this->format.y_sub_factor[i];
+  }
+  
+
+  uint32_t line_size(int i) const {
+    if (this->format.is_planar) {
+      return this->width * this->component_size() / this->format.x_sub_factor[i];
+    } else {
+      return this->width * this->component_size() * this->format.comps.num_comps / this->format.x_sub_factor[i];
+    }
+  }
+
+  size_t total_bits() const {
     size_t total = 0;
 
     for(uint8_t i = 0; i < this->format.num_planes(); i++) {
@@ -95,7 +112,7 @@ struct ImageContext {
     return total;
   }
 
-  void md5(uint8_t hash[MD5_BLOCK_SIZE]) {
+  void md5(uint8_t hash[MD5_BLOCK_SIZE]) const{
     MD5_CTX md5_ctx;
 
     md5_init(&md5_ctx);

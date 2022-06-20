@@ -53,11 +53,19 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
 
   this->codec_ctx_->width = image.width;
   this->codec_ctx_->height = image.height;
-  this->codec_ctx_->pix_fmt =
-      num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
   this->codec_ctx_->time_base = (AVRational){1, 25};
   this->codec_ctx_->framerate = (AVRational){25, 1};
   this->codec_ctx_->thread_count = 1;
+
+  if (image.format.comps == libench::ImageComponents::YUV) {
+    this->codec_ctx_->pix_fmt = AV_PIX_FMT_YUV422P10LE;
+  } else if (image.format.comps == libench::ImageComponents::RGB) {
+    this->codec_ctx_->pix_fmt = AV_PIX_FMT_0RGB32;
+  } else if  (image.format.comps == libench::ImageComponents::RGBA) {
+    this->codec_ctx_->pix_fmt = AV_PIX_FMT_RGB32;
+  } else {
+    throw std::runtime_error("Unknown components");
+  }
 
   ret = avcodec_open2(this->codec_ctx_, this->codec_, NULL);
   if (ret < 0)
@@ -79,7 +87,7 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
   if (ret < 0)
     throw std::runtime_error("Frame is not writable");
 
-  if (num_comps == 3) {
+  if (this->frame_->format == AV_PIX_FMT_0RGB32) {
     for (int i = 0; i < image.height; i++) {
       uint8_t* dst_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
@@ -100,7 +108,7 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
 #endif
       }
     }
-  } else {
+  } else if (this->frame_->format == AV_PIX_FMT_RGB32) {
     for (int i = 0; i < image.height; i++) {
       uint8_t* dst_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
@@ -121,6 +129,12 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
 #endif
       }
     }
+  } else if (this->frame_->format == AV_PIX_FMT_YUV422P10LE) {
+    for(int i = 0; i < image.format.comps.num_comps; i++) {
+      av_image_copy_plane(this->frame_->data[i], this->frame_->linesize[i],
+                          image.planes8[i], image.line_size(i),
+                          image.line_size(i), image.plane_height(i));
+    }
   }
 
   ret = avcodec_send_frame(this->codec_ctx_, this->frame_);
@@ -131,14 +145,14 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
   if (ret)
     throw std::runtime_error("Error during encoding");
 
-  libench::CodestreamContext cb;
+  libench::CodestreamContext cs;
 
-  cb.codestream = this->pkt_->data;
-  cb.size = (size_t)this->pkt_->size;
-  cb.state = this->codec_ctx_;
-  cb.state_size = this->codec_ctx_->extradata_size + sizeof(this->codec_ctx_->height) + sizeof(this->codec_ctx_->width);
+  cs.codestream = this->pkt_->data;
+  cs.size = (size_t)this->pkt_->size;
+  cs.state = this->codec_ctx_;
+  cs.state_size = this->codec_ctx_->extradata_size + sizeof(this->codec_ctx_->height) + sizeof(this->codec_ctx_->width);
 
-  return cb;
+  return cs;
 }
 
 libench::CodestreamContext libench::FFV1Encoder::encodeRGB8(const ImageContext &image) {
@@ -196,7 +210,7 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
 
   ctx->width = encoder_ctx->width;
   ctx->height = encoder_ctx->height;
-  ctx->pix_fmt = num_comps == 3 ? AV_PIX_FMT_0RGB32 : AV_PIX_FMT_RGB32;
+  ctx->pix_fmt = encoder_ctx->pix_fmt;
   ctx->time_base = (AVRational){1, 25};
   ctx->framerate = (AVRational){25, 1};
   ctx->extradata = encoder_ctx->extradata;
@@ -226,12 +240,19 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
   if (ret < 0)
     throw std::runtime_error("Error during decoding");
 
-  this->pixels_.resize(this->frame_->height * this->frame_->width * num_comps);
 
-  pixels = this->pixels_.data();
+  libench::ImageContext image;
 
-  if (num_comps == 3) {
-    for (int i = 0; i < ctx->height; i++) {
+  image.height = this->frame_->height;
+  image.width = this->frame_->width;
+
+  if (ctx->pix_fmt == AV_PIX_FMT_0RGB32) {
+    image.format = libench::ImageFormat::RGB8;
+    this->planes_[0].resize(image.plane_size(0));
+    image.planes8[0] = this->planes_[0].data();
+    pixels = this->planes_[0].data();
+
+      for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
       uint8_t* dst_line = pixels + (i * ctx->width * num_comps);
@@ -249,7 +270,12 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
 #endif
       }
     }
-  } else {
+  } else if (ctx->pix_fmt == AV_PIX_FMT_RGB32) {
+    image.format = libench::ImageFormat::RGBA8;
+    this->planes_[0].resize(image.plane_size(0));
+    image.planes8[0] = this->planes_[0].data();
+    pixels = this->planes_[0].data();
+
     for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
@@ -270,17 +296,23 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
 #endif
       }
     }
+  }  else if (this->frame_->format == AV_PIX_FMT_YUV422P10LE) {
+    image.format = libench::ImageFormat::YUV422P10;
+
+    for(int i = 0; i < image.format.comps.num_comps; i++) {
+      this->planes_[i].resize(image.plane_size(i));
+      image.planes8[i] = this->planes_[i].data();
+      pixels = this->planes_[i].data();
+      av_image_copy_plane(image.planes8[i], image.line_size(i),
+                          this->frame_->data[i], this->frame_->linesize[i],
+                          image.line_size(i), image.plane_height(i));
+    }
+  } else {
+    throw std::runtime_error("Bad pixel format");
   }
 
   ctx->extradata = NULL; /* this was allocated outside of ffmpeg */
   avcodec_free_context(&ctx);
-
-  libench::ImageContext image;
-
-  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
-  image.planes8[0] = this->pixels_.data();
-  image.height = this->frame_->height;
-  image.width = this->frame_->width;
 
   return image;
 }
