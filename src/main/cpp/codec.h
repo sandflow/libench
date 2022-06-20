@@ -46,7 +46,7 @@ struct ImageFormat {
 
   ImageFormat() {}
 
-  uint8_t num_planes() {
+  uint8_t num_planes() const {
     return this->is_planar ? this->comps.num_comps : 1;
   }
 
@@ -72,7 +72,7 @@ struct ImageContext {
     return this->is_plane16() ? 2 : 1;
   }
 
-  bool is_plane16() {
+  bool is_plane16() const {
     return this->format.bit_depth > 8;
   }
 

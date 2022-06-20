@@ -17,19 +17,25 @@ using namespace kdu_supp;
 libench::KDUEncoder::KDUEncoder(bool isHT) : isHT_(isHT){};
 
 libench::CodestreamContext libench::KDUEncoder::encodeRGB8(const ImageContext &image) {
-  return this->encode8(image, 3);
+  return this->encode(image);
 }
 
 libench::CodestreamContext libench::KDUEncoder::encodeRGBA8(const ImageContext &image) {
-  return this->encode8(image, 4);
+  return this->encode(image);
 }
 
-libench::CodestreamContext libench::KDUEncoder::encode8(const ImageContext &image, uint8_t num_comps) {
+libench::CodestreamContext libench::KDUEncoder::encodeYUV(const ImageContext &image) {
+  return this->encode(image);
+}
+
+libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image) {
   siz_params siz;
-  siz.set(Scomponents, 0, 0, num_comps);
-  siz.set(Sdims, 0, 0, static_cast<int>(image.height));
-  siz.set(Sdims, 0, 1, static_cast<int>(image.width));
-  siz.set(Sprecision, 0, 0, 8);
+  siz.set(Scomponents, 0, 0, image.format.comps.num_comps);
+  for(uint8_t i = 0; i < image.format.num_planes(); i++) {
+    siz.set(Sdims, i, 0, static_cast<int>(image.height) / image.format.y_sub_factor[i]);
+    siz.set(Sdims, i, 1, static_cast<int>(image.width) / image.format.x_sub_factor[i]);
+  }
+  siz.set(Sprecision, 0, 0, image.format.bit_depth);
   siz.set(Ssigned, 0, 0, false);
   static_cast<kdu_params&>(siz).finalize();
 
@@ -52,7 +58,12 @@ libench::CodestreamContext libench::KDUEncoder::encode8(const ImageContext &imag
   compressor.start(codestream, 0, NULL, NULL, 0, false, false, false, 0, 0,
                    true);
   int stripe_heights[4] = {(int)image.height, (int)image.height, (int)image.height, (int)image.height};
-  compressor.push_stripe((kdu_byte*)image.planes8[0], stripe_heights);
+
+  if (image.format.is_planar && image.is_plane16()) {
+    compressor.push_stripe((kdu_int16 **) &image.planes16, stripe_heights);
+  } else if ((!image.format.is_planar) && (!image.is_plane16())) {
+    compressor.push_stripe((kdu_byte*)image.planes8[0], stripe_heights);
+  }
   compressor.finish();
 
   libench::CodestreamContext cb;

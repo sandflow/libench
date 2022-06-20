@@ -44,7 +44,7 @@ class KDUEncoder : public Encoder {
   CodestreamContext encodeRGBA8(const ImageContext &image);
 
  private:
-  CodestreamContext encode8(const ImageContext &image, uint8_t num_comps);
+  CodestreamContext encode(const ImageContext &image);
 
   mem_compressed_target out_;
   bool isHT_;
