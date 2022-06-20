@@ -51,7 +51,7 @@ set(JPEGXL_BUNDLE_SKCMS FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_MANPAGES FALSE CACHE INTERNAL "" FORCE)
 include_directories(ext/libjxl/experimental/fast_lossless ext/libjxl/lib/include "${PROJECT_BINARY_DIR}/ext/libjxl/lib/include")
 add_library(fast_lossless ext/libjxl/experimental/fast_lossless/fast_lossless.cc)
-add_subdirectory(ext/libjxl)
+add_subdirectory(ext/libjxl EXCLUDE_FROM_ALL)
 
 # ffmpeg
 

@@ -43,6 +43,7 @@ libench::FFV1Encoder::~FFV1Encoder() {
 
 libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &image, uint8_t num_comps) {
   int ret;
+  AVDictionary *opts = NULL; 
 
   avcodec_free_context(&this->codec_ctx_);
 
@@ -67,7 +68,13 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
     throw std::runtime_error("Unknown components");
   }
 
-  ret = avcodec_open2(this->codec_ctx_, this->codec_, NULL);
+  if (image.format.bit_depth > 8) {
+    ret = av_dict_set(&opts, "coder", "range_tab", 0);
+    if (ret < 0)
+      throw std::runtime_error("Opts allocation failed");
+  }
+
+  ret = avcodec_open2(this->codec_ctx_, this->codec_, &opts);
   if (ret < 0)
     throw std::runtime_error("Could not open codec");
 
