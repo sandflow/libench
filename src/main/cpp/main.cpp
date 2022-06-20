@@ -206,14 +206,13 @@ int main(int argc, char* argv[]) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    switch (in_img.format.comps.num_comps) {
-      case 3:
+    if (in_img.format == libench::ImageFormat::RGB8) {
         cs = encoder->encodeRGB8(in_img);
-        break;
-      case 4:
+    } else if (in_img.format == libench::ImageFormat::RGBA8) {
         cs = encoder->encodeRGBA8(in_img);
-        break;
-      default:
+    } else if (in_img.format == libench::ImageFormat::YUV422P10) {
+        cs = encoder->encodeYUV(in_img);
+    } else {
         throw std::runtime_error("Unsupported number of components");
     }
 
@@ -249,15 +248,14 @@ int main(int argc, char* argv[]) {
 
     start = std::chrono::high_resolution_clock::now();
 
-    switch (in_img.format.comps.num_comps) {
-      case 3:
-        out_img = decoder->decodeRGB8(cs);
-        break;
-      case 4:
-        out_img = decoder->decodeRGBA8(cs);
-        break;
-      default:
-        throw std::runtime_error("Unsupported number of components");
+    if (in_img.format == libench::ImageFormat::RGB8) {
+      out_img = decoder->decodeRGB8(cs);
+    } else if (in_img.format == libench::ImageFormat::RGBA8) {
+      out_img = decoder->decodeRGBA8(cs);
+    } else if (in_img.format == libench::ImageFormat::YUV422P10) {
+      out_img = decoder->decodeYUV(cs);
+    } else {
+      throw std::runtime_error("Unsupported number of components");
     }
 
     test.decode_times[i] = std::chrono::high_resolution_clock::now() - start;

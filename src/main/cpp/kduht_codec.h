@@ -39,11 +39,11 @@ class KDUEncoder : public Encoder {
  public:
   KDUEncoder(bool isHT = true);
 
-  CodestreamContext encodeRGB8(const ImageContext &image);
+  virtual CodestreamContext encodeRGB8(const ImageContext &image);
 
-  CodestreamContext encodeRGBA8(const ImageContext &image);
+  virtual CodestreamContext encodeRGBA8(const ImageContext &image);
 
-  CodestreamContext encodeYUV(const ImageContext &image);
+  virtual CodestreamContext encodeYUV(const ImageContext &image);
 
  private:
   CodestreamContext encode(const ImageContext &image);
@@ -59,6 +59,8 @@ class KDUDecoder : public Decoder {
   virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
   virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
+
+  virtual ImageContext decodeYUV(const CodestreamContext& cs);
 
  private:
   ImageContext decode(const CodestreamContext& cs);

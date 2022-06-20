@@ -54,6 +54,17 @@ struct ImageFormat {
     return this->is_planar ? this->comps.num_comps : 1;
   }
 
+  bool operator==(const ImageFormat& other) const {
+    if (&other == this)
+      return true;
+
+    return other.bit_depth == this->bit_depth
+            && other.comps == this->comps
+            && other.is_planar == this->is_planar
+            && other.x_sub_factor == this->x_sub_factor
+            && other.y_sub_factor == this->y_sub_factor;
+  }
+
   static ImageFormat RGBA8;
   static ImageFormat RGB8;
   static ImageFormat YUV422P10;

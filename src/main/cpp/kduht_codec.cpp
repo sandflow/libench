@@ -119,6 +119,10 @@ libench::ImageContext libench::KDUDecoder::decodeRGBA8(const CodestreamContext& 
   return this->decode(cs);
 }
 
+libench::ImageContext libench::KDUDecoder::decodeYUV(const CodestreamContext& cs) {
+  return this->decode(cs);
+}
+
 libench::ImageContext libench::KDUDecoder::decode(const CodestreamContext& cs) {
   libench::ImageContext image;
 

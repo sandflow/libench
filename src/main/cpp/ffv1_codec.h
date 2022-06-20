@@ -17,12 +17,14 @@ class FFV1Encoder : public Encoder {
   FFV1Encoder();
   ~FFV1Encoder();
 
-  CodestreamContext encodeRGB8(const ImageContext &image);
+  virtual CodestreamContext encodeRGB8(const ImageContext &image);
 
-  CodestreamContext encodeRGBA8(const ImageContext &image);
+  virtual CodestreamContext encodeRGBA8(const ImageContext &image);
+
+  virtual CodestreamContext encodeYUV(const ImageContext &image);
 
  private:
-  CodestreamContext encode8(const ImageContext &image, uint8_t num_comps);
+  CodestreamContext encode(const ImageContext &image);
 
   AVPacket* pkt_;
   AVFrame* frame_;
@@ -39,8 +41,10 @@ class FFV1Decoder : public Decoder {
 
   virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
+  virtual ImageContext decodeYUV(const CodestreamContext& cs);
+
  private:
-  ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
+  ImageContext decode(const CodestreamContext& cs);
 
   AVPacket* pkt_;
   AVFrame* frame_;

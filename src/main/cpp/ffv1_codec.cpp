@@ -41,7 +41,7 @@ libench::FFV1Encoder::~FFV1Encoder() {
   avcodec_free_context(&this->codec_ctx_);
 }
 
-libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &image, uint8_t num_comps) {
+libench::CodestreamContext libench::FFV1Encoder::encode(const ImageContext &image) {
   int ret;
   AVDictionary *opts = NULL; 
 
@@ -93,6 +93,8 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
   ret = av_frame_make_writable(this->frame_);
   if (ret < 0)
     throw std::runtime_error("Frame is not writable");
+
+  int num_comps = image.format.comps.num_comps;
 
   if (this->frame_->format == AV_PIX_FMT_0RGB32) {
     for (int i = 0; i < image.height; i++) {
@@ -163,11 +165,15 @@ libench::CodestreamContext libench::FFV1Encoder::encode8(const ImageContext &ima
 }
 
 libench::CodestreamContext libench::FFV1Encoder::encodeRGB8(const ImageContext &image) {
-  return this->encode8(image, 3);
+  return this->encode(image);
 }
 
 libench::CodestreamContext libench::FFV1Encoder::encodeRGBA8(const ImageContext &image) {
-  return this->encode8(image, 4);
+  return this->encode(image);
+}
+
+libench::CodestreamContext libench::FFV1Encoder::encodeYUV(const ImageContext &image) {
+  return this->encode(image);
 }
 
 /*
@@ -194,16 +200,21 @@ libench::FFV1Decoder::~FFV1Decoder() {
 }
 
 libench::ImageContext libench::FFV1Decoder::decodeRGB8(const CodestreamContext& cs) {
-  return this->decode8(cs, 3);
+  return this->decode(cs);
 }
 
 libench::ImageContext libench::FFV1Decoder::decodeRGBA8(const CodestreamContext& cs) {
-  return this->decode8(cs, 4);
+  return this->decode(cs);
 }
+
+libench::ImageContext libench::FFV1Decoder::decodeYUV(const CodestreamContext& cs) {
+  return this->decode(cs);
+}
+
 
 static void null_free(void*, uint8_t*) {}
 
-libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
+libench::ImageContext libench::FFV1Decoder::decode(const CodestreamContext& cs) {
   int ret;
   AVCodecContext* ctx;
   AVCodecContext* encoder_ctx = (AVCodecContext*) cs.state;
@@ -262,7 +273,7 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
       for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      uint8_t* dst_line = pixels + (i * ctx->width * num_comps);
+      uint8_t* dst_line = pixels + (i * ctx->width * image.format.comps.num_comps);
       for (int j = 0; j < ctx->width; j++) {
 #if HAVE_BIGENDIAN
         /* 0RGB -> RGB */
@@ -286,7 +297,7 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
     for (int i = 0; i < ctx->height; i++) {
       const uint8_t* src_line =
           this->frame_->data[0] + (i * this->frame_->linesize[0]);
-      uint8_t* dst_line = pixels + (i * ctx->width * num_comps);
+      uint8_t* dst_line = pixels + (i * ctx->width * image.format.comps.num_comps);
       for (int j = 0; j < ctx->width; j++) {
 #if HAVE_BIGENDIAN
         /* ARGB -> RGBA */
