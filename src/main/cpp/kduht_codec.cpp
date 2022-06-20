@@ -63,16 +63,24 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
   kdu_codestream codestream;
 
   codestream.create(&siz, &this->out_);
+
   codestream.access_siz()
       ->access_cluster(COD_params)
       ->set(Creversible, 0, 0, true);
+
   codestream.access_siz()
       ->access_cluster(COD_params)
       ->set(Corder, 0, 0, Corder_CPRL);
-  if (this->isHT_)
+
+  codestream.access_siz()
+    ->access_cluster(COD_params)
+    ->set(Cycc, 0, 0, image.format.comps == libench::ImageComponents::RGB);
+
+  if (this->isHT_) {
     codestream.access_siz()
         ->access_cluster(COD_params)
         ->set(Cmodes, 0, 0, Cmodes_HT);
+  }
 
   codestream.access_siz()->finalize_all();
 
