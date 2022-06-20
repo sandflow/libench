@@ -6,4 +6,4 @@ libench::ImageComponents libench::ImageComponents::YUV = libench::ImageComponent
 
 libench::ImageFormat libench::ImageFormat::RGBA8 = libench::ImageFormat(8, libench::ImageComponents::RGBA, false, {1, 1, 1, 1}, {1, 1, 1, 1});
 libench::ImageFormat libench::ImageFormat::RGB8 = libench::ImageFormat(8, libench::ImageComponents::RGB, false, {1, 1, 1, 1}, {1, 1, 1, 1});
-libench::ImageFormat libench::ImageFormat::YUV422P10 = libench::ImageFormat(10, libench::ImageComponents::YUV, false, {1, 2, 2, 1}, {1, 2, 2, 1});
+libench::ImageFormat libench::ImageFormat::YUV422P10 = libench::ImageFormat(10, libench::ImageComponents::YUV, true, {1, 2, 2, 1}, {1, 1, 1, 1});

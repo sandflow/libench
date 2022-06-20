@@ -77,8 +77,11 @@ struct ImageContext {
   }
 
   size_t plane_size(int i) {
-    return this->width * this->height * this->format.comps.num_comps
-                       * this->component_size() / this->format.x_sub_factor[i] / this->format.y_sub_factor[i];
+    if (this->format.is_planar) {
+      return this->width * this->height * this->component_size() / this->format.x_sub_factor[i] / this->format.y_sub_factor[i];
+    } else {
+      return this->width * this->height * this->component_size() * this->format.comps.num_comps / this->format.x_sub_factor[i] / this->format.y_sub_factor[i];
+    }
   }
 
   size_t total_bits() {

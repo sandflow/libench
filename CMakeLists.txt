@@ -95,6 +95,7 @@ add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/reso
 add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "jxl-rgba" COMMAND libench jxl -r 1 --dir . ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 add_test(NAME "j2k_ht_kdu" COMMAND libench j2k_ht_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "j2k_ht_kdu_yuv" COMMAND libench j2k_ht_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/loc.720x243.yuv422p10le.yuv)
 add_test(NAME "j2k_1_kdu" COMMAND libench j2k_1_kdu ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)

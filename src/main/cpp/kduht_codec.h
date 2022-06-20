@@ -43,6 +43,8 @@ class KDUEncoder : public Encoder {
 
   CodestreamContext encodeRGBA8(const ImageContext &image);
 
+  CodestreamContext encodeYUV(const ImageContext &image);
+
  private:
   CodestreamContext encode(const ImageContext &image);
 
@@ -59,9 +61,9 @@ class KDUDecoder : public Decoder {
   virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
  private:
-  ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
+  ImageContext decode(const CodestreamContext& cs);
 
-  std::vector<uint8_t> pixels_;
+  std::vector<uint8_t> planes_[3];
 };
 
 }  // namespace libench

@@ -60,7 +60,9 @@ std::ostream& operator<<(std::ostream& os, const TestContext& ctx) {
 libench::ImageContext load_image(const std::string& filepath) {
   libench::ImageContext image;
 
-  std::string file_ext = filepath.substr(filepath.find_last_of(".") + 1);
+  size_t start = filepath.find_last_of(".");
+
+  std::string file_ext = filepath.substr(start + 1);
 
   if (file_ext == "png") {
     int height;
@@ -89,17 +91,17 @@ libench::ImageContext load_image(const std::string& filepath) {
   } else if (file_ext == "yuv") {
     /* must be of the form XXXXXX.<width>x<height>.<pixel_fmt>.yuv */
 
-    size_t start = filepath.find(".");
-    size_t end = filepath.find("x", start);
-    image.width = std::stoi(filepath.substr(start, end));
+    size_t end = start - 1;
+    start = filepath.find_last_of(".", end);
+    std::string pix_fmt = filepath.substr(start + 1, end - start);
 
-    start = end;
-    end = filepath.find(".", start);
-    image.height = std::stoi(filepath.substr(start, end));
+    end = start - 1;
+    start = filepath.find_last_of("x", end);
+    image.height = std::stoi(filepath.substr(start + 1, end - start));
 
-    start = end;
-    end = filepath.find(".", start);
-    std::string pix_fmt = filepath.substr(start, end);
+    end = start - 1;
+    start = filepath.find_last_of(".", end);
+    image.width = std::stoi(filepath.substr(start + 1, end - start));
 
     if (pix_fmt == "yuv422p10le") {
       image.format = libench::ImageFormat::YUV422P10;
