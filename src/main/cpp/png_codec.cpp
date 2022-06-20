@@ -27,7 +27,7 @@ libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &imag
 
   ret = lodepng_encode_memory(&this->cs_.codestream, &this->cs_.size, image.planes8[0],
                               image.width, image.height,
-                              image.num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
+                              image.format.comps.num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
 
   if (ret)
     throw std::runtime_error("PNG decode failed");
@@ -40,8 +40,6 @@ libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &imag
  */
 
 libench::PNGDecoder::PNGDecoder() {
-    this->image_.bit_depth = 8;
-    this->image_.num_planes = 1;
 };
 
 libench::PNGDecoder::~PNGDecoder() {
@@ -61,7 +59,7 @@ libench::ImageContext libench::PNGDecoder::decode8(const CodestreamContext& cs, 
 
   free(this->image_.planes8[0]);
 
-  this->image_.num_comps = num_comps;
+  this->image_.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
 
   ret = lodepng_decode_memory(&this->image_.planes8[0], &this->image_.width,
                               &this->image_.height, cs.codestream, cs.size,

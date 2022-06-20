@@ -57,6 +57,80 @@ std::ostream& operator<<(std::ostream& os, const TestContext& ctx) {
   return os;
 }
 
+libench::ImageContext load_image(const std::string& filepath) {
+  libench::ImageContext image;
+
+  std::string file_ext = filepath.substr(filepath.find_last_of(".") + 1);
+
+  if (file_ext == "png") {
+    int height;
+    int width;
+    int num_comps;
+    
+    image.planes8[0] = stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
+    if (! image.planes8[0]) {
+      throw std::runtime_error("Cannot read image file");
+    }
+
+    image.height = height;
+    image.width = width;
+
+    switch (num_comps) {
+      case 3:
+        image.format = libench::ImageFormat::RGB8;
+        break;
+      case 4:
+        image.format = libench::ImageFormat::RGBA8;
+        break;
+      default:
+        throw std::runtime_error("Only RGB or RGBA images are supported");
+    }
+
+  } else if (file_ext == "yuv") {
+    /* must be of the form XXXXXX.<width>x<height>.<pixel_fmt>.yuv */
+
+    size_t start = filepath.find(".");
+    size_t end = filepath.find("x", start);
+    image.width = std::stoi(filepath.substr(start, end));
+
+    start = end;
+    end = filepath.find(".", start);
+    image.height = std::stoi(filepath.substr(start, end));
+
+    start = end;
+    end = filepath.find(".", start);
+    std::string pix_fmt = filepath.substr(start, end);
+
+    if (pix_fmt == "yuv422p10le") {
+      image.format = libench::ImageFormat::YUV422P10;
+
+      std::ifstream in(filepath);
+
+      for(uint8_t i = 0; i < image.format.num_planes(); i++) {
+
+        image.planes16[i] = (uint16_t*) malloc(image.plane_size(i));
+        if (! image.planes16[i]) {
+          throw std::runtime_error("Cannot allocate memory");
+        }
+        
+        in.read((char*) image.planes16[i], image.plane_size(i));
+        if (in.bad()) {
+          throw std::runtime_error("Read failed");
+        }
+      }
+
+    } else {
+      throw std::runtime_error("Unknown pixel format: " + pix_fmt);
+    }
+
+    
+  } else {
+    throw std::runtime_error("Image file must be YUV or PNG");
+  }
+
+  return image;
+}
+
 int main(int argc, char* argv[]) {
   cxxopts::Options options("libench", "Lossless image codec benchmark");
 
@@ -102,87 +176,10 @@ int main(int argc, char* argv[]) {
     throw std::runtime_error("Unknown encoder");
   }
 
-  libench::ImageContext in_img;
   
   auto& filepath = result["file"].as<std::string>();
 
-  std::string file_ext = filepath.substr(filepath.find_last_of(".") + 1);
-
-  if (file_ext == "png") {
-    in_img.num_planes = 1;
-    in_img.bit_depth = 8;
-
-    int height;
-    int width;
-    int num_comps;
-    
-    in_img.planes8[0] = stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
-    if (! in_img.planes8[0]) {
-      throw std::runtime_error("Cannot read image file");
-    }
-    if (num_comps < 3 || num_comps > 4) {
-      std::cerr << "Only RGB or RGBA images are supported";
-      return 1;
-    }
-
-    in_img.height = height;
-    in_img.width = width;
-    in_img.num_comps = num_comps;
-
-  } else if (file_ext == "yuv") {
-    /* must be of the form XXXXXX.<width>x<height>.<pixel_fmt>.yuv */
-
-    size_t start = filepath.find(".");
-    size_t end = filepath.find("x", start);
-    in_img.width = std::stoi(filepath.substr(start, end));
-
-    start = end;
-    end = filepath.find(".", start);
-    in_img.height = std::stoi(filepath.substr(start, end));
-
-    start = end;
-    end = filepath.find(".", start);
-    std::string pix_fmt = filepath.substr(start, end);
-
-    if (pix_fmt == "yuv422p10le") {
-      in_img.x_sub_factor[0] = 1;
-      in_img.y_sub_factor[0] = 1;
-      in_img.x_sub_factor[1] = 2;
-      in_img.y_sub_factor[1] = 1;
-      in_img.x_sub_factor[2] = 2;
-      in_img.y_sub_factor[2] = 1;
-
-      in_img.num_planes = 3;
-      in_img.num_comps = 3;
-      in_img.bit_depth = 10;
-
-      std::ifstream in(filepath);
-
-      for(uint8_t i = 0; i < in_img.num_comps; i++) {
-
-        in_img.planes16[i] = (uint16_t*) malloc(in_img.plane_size(i));
-        if (! in_img.planes16[i]) {
-          std::cerr << "Cannot allocate memory";
-          return 1;
-        }
-        
-        in.read((char*) in_img.planes16[i], in_img.plane_size(i));
-        if (in.bad()) {
-          std::cerr << "Read failed";
-          return 1;
-        }
-      }
-
-    } else {
-      std::cerr << "Unknown pixel format: " << pix_fmt << std::endl;
-      return 1;
-    }
-
-    
-  } else {
-    throw std::runtime_error("Image file must be YUV or PNG");
-  }
-
+  libench::ImageContext in_img = load_image(filepath);
 
   int repetitions = result["repetitions"].as<int>();
 
@@ -207,7 +204,7 @@ int main(int argc, char* argv[]) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    switch (in_img.num_comps) {
+    switch (in_img.format.comps.num_comps) {
       case 3:
         cs = encoder->encodeRGB8(in_img);
         break;
@@ -250,7 +247,7 @@ int main(int argc, char* argv[]) {
 
     start = std::chrono::high_resolution_clock::now();
 
-    switch (in_img.num_comps) {
+    switch (in_img.format.comps.num_comps) {
       case 3:
         out_img = decoder->decodeRGB8(cs);
         break;
@@ -280,7 +277,7 @@ int main(int argc, char* argv[]) {
 
   std::cout << test;
 
-  for(uint8_t i = 0; i < in_img.num_planes; i++) {
+  for(uint8_t i = 0; i < in_img.format.num_planes(); i++) {
     free(in_img.planes8[i]);
   }
 

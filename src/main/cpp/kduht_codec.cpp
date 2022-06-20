@@ -102,14 +102,12 @@ libench::ImageContext libench::KDUDecoder::decode8(const CodestreamContext& cs, 
 
   d.finish();
 
-  libench::ImageContext pb;
+  libench::ImageContext image;
   
-  pb.height = (uint32_t)height;
-  pb.width = (uint32_t)width;
-  pb.num_comps = num_comps;
-  pb.bit_depth = 8;
-  pb.num_planes = 1;
-  pb.planes8[0] = this->pixels_.data();
+  image.height = (uint32_t)height;
+  image.width = (uint32_t)width;
+  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
+  image.planes8[0] = this->pixels_.data();
 
-  return pb;
+  return image;
 }

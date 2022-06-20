@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <cstdint>
 #include <stdexcept>
+#include <array>
 extern "C" {
 #include "md5.h"
 }
@@ -19,38 +20,73 @@ struct CodestreamContext {
   CodestreamContext() {}
 };
 
+struct ImageComponents {
+  std::string name;
+  uint8_t num_comps;
+
+  ImageComponents(uint8_t num_comps, std::string name): num_comps(num_comps), name(name) { }
+
+  ImageComponents() {}
+
+  static ImageComponents RGBA;
+  static ImageComponents RGB;
+  static ImageComponents YUV;
+};
+
+
+struct ImageFormat {
+  uint8_t bit_depth;
+  ImageComponents comps;
+  bool is_planar;
+  std::array<uint8_t, 4> x_sub_factor;
+  std::array<uint8_t, 4> y_sub_factor;
+
+  ImageFormat(uint8_t bit_depth, const ImageComponents &comps, bool is_planar, const std::array<uint8_t, 4> &x_sub_factor, const std::array<uint8_t, 4> &y_sub_factor):
+    bit_depth(bit_depth), comps(comps), is_planar(is_planar), x_sub_factor(x_sub_factor), y_sub_factor(y_sub_factor) {}
+
+  ImageFormat() {}
+
+  uint8_t num_planes() {
+    return this->is_planar ? this->comps.num_comps : 1;
+  }
+
+  static ImageFormat RGBA8;
+  static ImageFormat RGB8;
+  static ImageFormat YUV422P10;
+};
+
+
+
 struct ImageContext {
   uint32_t width;
   uint32_t height;
-  uint8_t bit_depth;
-  uint8_t num_comps;
-  uint8_t num_planes;
-  uint8_t x_sub_factor[4];
-  uint8_t y_sub_factor[4];
+  ImageFormat format;
   union {
     uint8_t* planes8[4];
     uint16_t* planes16[4];
   };
 
-  ImageContext() : x_sub_factor {1}, y_sub_factor {1}, planes8 {NULL}, num_comps(0), num_planes(0), width(0), height(0), bit_depth(0) {}
+  ImageContext() : planes8 {NULL} {}
 
   int component_size() {
     return this->is_plane16() ? 2 : 1;
   }
 
   bool is_plane16() {
-    return this->bit_depth > 8;
+    return this->format.bit_depth > 8;
   }
 
   size_t plane_size(int i) {
-    return this->width * this->height * this->num_comps * this->component_size() / x_sub_factor[i] / y_sub_factor[i];
+    return this->width * this->height * this->format.comps.num_comps
+                       * this->component_size() / this->format.x_sub_factor[i] / this->format.y_sub_factor[i];
   }
 
   size_t total_bits() {
     size_t total = 0;
 
-    for(uint8_t i = 0; i < this->num_planes; i++) {
-      total += (this->width / x_sub_factor[i]) * (this->height / y_sub_factor[i]) * this->num_comps * this->bit_depth;
+    for(uint8_t i = 0; i < this->format.num_planes(); i++) {
+      total += (this->width / this->format.x_sub_factor[i]) * (this->height / this->format.y_sub_factor[i])
+               * this->format.comps.num_comps * this->format.bit_depth;
     }
 
     return total;
@@ -61,7 +97,7 @@ struct ImageContext {
 
     md5_init(&md5_ctx);
     
-    for(uint8_t i = 0; i < this->num_planes; i++) {
+    for(uint8_t i = 0; i < this->format.num_planes(); i++) {
       md5_update(&md5_ctx, this->planes8[i], this->plane_size(i));
     }
     

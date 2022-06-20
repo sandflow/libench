@@ -277,9 +277,7 @@ libench::ImageContext libench::FFV1Decoder::decode8(const CodestreamContext& cs,
 
   libench::ImageContext image;
 
-  image.num_comps = num_comps;
-  image.bit_depth = 8;
-  image.num_planes = 1;
+  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
   image.planes8[0] = this->pixels_.data();
   image.height = this->frame_->height;
   image.width = this->frame_->width;

@@ -33,8 +33,8 @@ libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &ima
   ojph::param_siz siz = cs.access_siz();
 
   siz.set_image_extent(ojph::point(image.width, image.height));
-  siz.set_num_components(image.num_comps);
-  for (ojph::ui32 c = 0; c < image.num_comps; c++)
+  siz.set_num_components(image.format.comps.num_comps);
+  for (ojph::ui32 c = 0; c < image.format.comps.num_comps; c++)
     siz.set_component(c, ojph::point(1, 1), 8, false);
   siz.set_image_offset(ojph::point(0, 0));
   siz.set_tile_size(ojph::size(image.width, image.height));
@@ -44,7 +44,7 @@ libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &ima
 
   ojph::param_cod cod = cs.access_cod();
 
-  cod.set_color_transform(image.num_comps == 3 || image.num_comps == 4);
+  cod.set_color_transform(image.format.comps.num_comps == 3 || image.format.comps.num_comps == 4);
   cod.set_reversible(true);
 
   /* encode */
@@ -59,7 +59,7 @@ libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &ima
   ojph::line_buf* cur_line = cs.exchange(NULL, next_comp);
 
   for (uint32_t i = 0; i < image.height; ++i) {
-    for (uint32_t c = 0; c < image.num_comps; c++) {
+    for (uint32_t c = 0; c < image.format.comps.num_comps; c++) {
       assert(next_comp == c);
 
       const uint8_t* in = line + c;
@@ -68,13 +68,13 @@ libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &ima
       for (uint32_t p = 0; p < image.width; p++) {
         *out = *in;
         out += 1;
-        in += image.num_comps;
+        in += image.format.comps.num_comps;
       }
 
       cur_line = cs.exchange(cur_line, next_comp);
     }
 
-    line += image.num_comps * image.width;
+    line += image.format.comps.num_comps * image.width;
   }
 
   cs.flush();
@@ -148,14 +148,12 @@ libench::ImageContext libench::OJPHDecoder::decode8(const CodestreamContext& ctx
 
   this->in_.close();
 
-  libench::ImageContext pb;
+  libench::ImageContext image;
 
-  pb.height = (uint32_t)height;
-  pb.width = (uint32_t)width;
-  pb.num_comps = num_comps;
-  pb.bit_depth = 8;
-  pb.num_planes = 1;
-  pb.planes8[0] = this->pixels_.data();
+  image.height = (uint32_t)height;
+  image.width = (uint32_t)width;
+  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
+  image.planes8[0] = this->pixels_.data();
 
-  return pb;
+  return image;
 }

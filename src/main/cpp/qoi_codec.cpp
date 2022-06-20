@@ -28,7 +28,7 @@ libench::CodestreamContext libench::QOIEncoder::encode8(const ImageContext &imag
 
   qoi_desc desc = {.width = image.width,
                    .height = image.height,
-                   .channels = image.num_comps,
+                   .channels = image.format.comps.num_comps,
                    .colorspace = QOI_SRGB};
 
   int codestream_size;
@@ -45,8 +45,6 @@ libench::CodestreamContext libench::QOIEncoder::encode8(const ImageContext &imag
  */
 
 libench::QOIDecoder::QOIDecoder() {
-  this->image_.bit_depth = 8;
-  this->image_.num_planes = 1;
 };
 
 libench::QOIDecoder::~QOIDecoder() {
@@ -69,7 +67,7 @@ libench::ImageContext libench::QOIDecoder::decode8(const CodestreamContext& cs) 
   this->image_.planes8[0] = (uint8_t*)qoi_decode(cs.codestream, cs.size, &desc, 0);
   this->image_.width = desc.width;
   this->image_.height = desc.height;
-  this->image_.num_comps = desc.channels;
+  this->image_.format = desc.channels == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
 
   return this->image_;
 }

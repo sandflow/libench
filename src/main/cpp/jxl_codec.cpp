@@ -60,11 +60,9 @@ libench::ImageContext libench::JXLDecoder::decodeRGBA8(const CodestreamContext& 
 }
 
 libench::ImageContext libench::JXLDecoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
-  libench::ImageContext pb;
+  libench::ImageContext image;
 
-  pb.num_comps = num_comps;
-  pb.num_planes = 1;
-  pb.bit_depth = 8;
+  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
 
   // Multi-threaded parallel runner.
   auto runner = JxlResizableParallelRunnerMake(nullptr);
@@ -100,8 +98,8 @@ libench::ImageContext libench::JXLDecoder::decode8(const CodestreamContext& cs, 
       if (JXL_DEC_SUCCESS != JxlDecoderGetBasicInfo(dec.get(), &info)) {
         throw std::runtime_error("JxlDecoderGetBasicInfo failed\n");
       }
-      pb.width = info.xsize;
-      pb.height = info.ysize;
+      image.width = info.xsize;
+      image.height = info.ysize;
       JxlResizableParallelRunnerSetThreads(
           runner.get(),
           JxlResizableParallelRunnerSuggestThreads(info.xsize, info.ysize));
@@ -126,10 +124,10 @@ libench::ImageContext libench::JXLDecoder::decode8(const CodestreamContext& cs, 
           JxlDecoderImageOutBufferSize(dec.get(), &format, &buffer_size)) {
         throw std::runtime_error("JxlDecoderImageOutBufferSize failed\n");
       }
-      if (buffer_size != pb.height * pb.width * num_comps) {
+      if (buffer_size != image.height * image.width * num_comps) {
         throw std::runtime_error("Invalid out buffer size");
       }
-      this->pixels_.resize(pb.height * pb.width * num_comps);
+      this->pixels_.resize(image.height * image.width * num_comps);
       void* pixels_buffer = (void*)this->pixels_.data();
       size_t pixels_buffer_size = this->pixels_.size() * sizeof(float);
       if (JXL_DEC_SUCCESS != JxlDecoderSetImageOutBuffer(dec.get(), &format,
@@ -150,7 +148,7 @@ libench::ImageContext libench::JXLDecoder::decode8(const CodestreamContext& cs, 
     }
   }
 
-  pb.planes8[0] = this->pixels_.data();
+  image.planes8[0] = this->pixels_.data();
 
-  return pb;
+  return image;
 }
