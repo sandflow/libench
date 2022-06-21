@@ -72,10 +72,6 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
       ->access_cluster(COD_params)
       ->set(Corder, 0, 0, Corder_CPRL);
 
-  codestream.access_siz()
-    ->access_cluster(COD_params)
-    ->set(Cycc, 0, 0, image.format.comps == libench::ImageComponents::RGB);
-
   if (this->isHT_) {
     codestream.access_siz()
         ->access_cluster(COD_params)
