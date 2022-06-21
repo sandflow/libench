@@ -43,7 +43,8 @@
           axis</em> is the <em>average encode or decode time in seconds</em> of an image in the set.
         The closer to the bottom left of each plot the faster and more coding efficient.</p>
 
-      <p class="mt-4">For each combination of source image and codec, the <a href="https://github.com/sandflow/libench">benchmark</a> loads the image in memory and
+      <p class="mt-4">For each combination of source image and codec, the <a
+          href="https://github.com/sandflow/libench">benchmark</a> loads the image in memory and
         encodes/decodes it
         using the codec (<a href="results.csv">download the raw data</a>). The decoded
         image is checked against the source image to confirm they are bit-for-bit identical. Encode and decode times are
@@ -96,15 +97,30 @@
       </table>
     </section>
 
-    <section id="encoding" class="container">
-      <h2 class="text-center">Encoding results</h2>
-      <img class="img-fluid" src="encode-stats.png" />
-    </section>
-
-
-    <section id="decoding" class="container">
-      <h2 class="text-center">Decoding results</h2>
-      <img class="img-fluid" src="decode-stats.png" />
+    <section class="container">
+      
+      <ul class="nav nav-tabs" id="results-tab" role="tablist">
+        {{#panels}}
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {{#active}}active{{/active}}" id="{{id}}-tab" data-bs-toggle="tab" data-bs-target="#{{id}}-tab-pane"
+            type="button" role="tab">{{name}}</button>
+        </li>
+        {{/panels}}
+      </ul>
+      <div class="tab-content" id="results-tab-content">
+        {{#panels}}
+        <div class="tab-pane fade show {{#active}}active{{/active}}" id="{{id}}-tab-pane" role="tabpanel">
+          <section class="container">
+            <h2 class="text-center pt-3">Encoding results</h2>
+            <img class="img-fluid" src="{{id}}-encode.png" />
+          </section>
+          <section class="container">
+            <h2 class="text-center pt-3">Decoding results</h2>
+            <img class="img-fluid" src="{{id}}-decode.png" />
+          </section>
+        </div>
+        {{/panels}}
+      </div>
     </section>
 
   </main>
