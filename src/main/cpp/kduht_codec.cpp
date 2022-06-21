@@ -64,6 +64,8 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
 
   codestream.create(&siz, &this->out_);
 
+  codestream.set_disabled_auto_comments(0xFFFFFFFF);
+
   codestream.access_siz()
       ->access_cluster(COD_params)
       ->set(Creversible, 0, 0, true);
