@@ -19,6 +19,7 @@
 #include "stb_image.h"
 
 struct TestContext {
+  libench::ImageContext image;
   uint8_t image_hash[MD5_BLOCK_SIZE];
   std::string codestream_path;
   uint32_t image_sz;
@@ -50,7 +51,11 @@ std::ostream& operator<<(std::ostream& os, const TestContext& ctx) {
 
   os << "\"imageSize\" : " << ctx.image_sz << "," << std::endl;
 
-  os << "\"codestreamSize\" : " << ctx.codestream_sz  << std::endl;
+  os << "\"codestreamSize\" : " << ctx.codestream_sz << ","  << std::endl;
+
+  os << "\"imageWidth\" : " << ctx.image.width  << "," << std::endl;
+
+   os << "\"imageHeight\" : " << ctx.image.height  << std::endl;
 
   os << "}" << std::endl;
 
@@ -187,6 +192,7 @@ int main(int argc, char* argv[]) {
 
   TestContext test;
 
+  test.image = in_img;
   test.encode_times.resize(repetitions);
   test.decode_times.resize(repetitions);
   test.image_sz = in_img.total_bits() / 8;

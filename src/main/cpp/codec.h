@@ -17,7 +17,7 @@ struct CodestreamContext {
   void* state;
   size_t state_size;
 
-  CodestreamContext() {}
+  CodestreamContext(): codestream(NULL), size(0), state(NULL), state_size(0) {}
 };
 
 struct ImageComponents {

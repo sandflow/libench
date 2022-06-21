@@ -169,26 +169,32 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
   for dirpath, _dirnames, filenames in os.walk(root_path):
     collection_name = os.path.relpath(dirpath, root_path)
     print(f"Collection: {collection_name}")
+
     for fn in filenames:
-      if os.path.splitext(fn)[1] != ".png":
-        continue
 
       file_path = os.path.join(dirpath, fn)
 
-      png_width, png_height, _png_rows, png_info = png.Reader(filename=file_path).read(lenient=True)
+      if os.path.splitext(fn)[1] == ".png":
+        _, _, _png_rows, png_info = png.Reader(filename=file_path).read(lenient=True)
 
-      if png_info["greyscale"] or png_info["bitdepth"] != 8:
+        if png_info["greyscale"] or png_info["bitdepth"] != 8:
+          continue
+
+        image_format = "RGBA8" if png_info["alpha"] else "RGB8"
+
+      elif os.path.splitext(fn)[1] == ".yuv":
+        image_format = "yuv"
+
+      else:
         continue
-
-      png_format = "RGBA8" if png_info["alpha"] else "RGB8"
 
       rel_path = os.path.relpath(file_path, root_path)
 
-      print(f"{rel_path} ({png_format}): ", end="")
+      print(f"{rel_path} ({image_format}): ", end="")
 
       run_count = 3
 
-      for codec_name in CODEC_PREFS.keys():
+      for codec_name in CODEC_PREFS:
 
         try:
           stdout = json.loads(
@@ -201,9 +207,9 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
               decode_time=sum(stdout["decodeTimes"])/len(stdout["decodeTimes"]),
               coded_size=stdout["codestreamSize"],
               image_size=stdout["imageSize"],
-              image_height=png_height,
-              image_width=png_width,
-              image_format=png_format,
+              image_height=stdout["imageHeight"],
+              image_width=stdout["imageWidth"],
+              image_format=image_format,
               image_path=rel_path,
               set_name=collection_name,
               run_count=len(stdout["encodeTimes"])
@@ -215,7 +221,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
         except (json.decoder.JSONDecodeError, subprocess.CalledProcessError):
           print("x", end="")
-          raise
+          #raise
 
       print()
 
