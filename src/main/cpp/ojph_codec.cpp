@@ -15,24 +15,15 @@ static ojph::size IMF_PRECINCTS[] = {ojph::size(256, 256), ojph::size(256, 256),
 
 libench::OJPHEncoder::OJPHEncoder(){};
 
-libench::CodestreamBuffer libench::OJPHEncoder::encodeRGB8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 3);
+libench::CodestreamContext libench::OJPHEncoder::encodeRGB8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::OJPHEncoder::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 4);
+libench::CodestreamContext libench::OJPHEncoder::encodeRGBA8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
-                                                        uint32_t width,
-                                                        uint32_t height,
-                                                        uint8_t num_comps) {
+libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &image) {
   ojph::codestream cs;
 
   cs.set_planar(false);
@@ -41,19 +32,19 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 
   ojph::param_siz siz = cs.access_siz();
 
-  siz.set_image_extent(ojph::point(width, height));
-  siz.set_num_components(num_comps);
-  for (ojph::ui32 c = 0; c < num_comps; c++)
+  siz.set_image_extent(ojph::point(image.width, image.height));
+  siz.set_num_components(image.format.comps.num_comps);
+  for (ojph::ui32 c = 0; c < image.format.comps.num_comps; c++)
     siz.set_component(c, ojph::point(1, 1), 8, false);
   siz.set_image_offset(ojph::point(0, 0));
-  siz.set_tile_size(ojph::size(width, height));
+  siz.set_tile_size(ojph::size(image.width, image.height));
   siz.set_tile_offset(ojph::point(0, 0));
 
   /* cod */
 
   ojph::param_cod cod = cs.access_cod();
 
-  cod.set_color_transform(num_comps == 3 || num_comps == 4);
+  cod.set_color_transform(image.format.comps.num_comps == 3 || image.format.comps.num_comps == 4);
   cod.set_reversible(true);
 
   /* encode */
@@ -63,27 +54,27 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 
   cs.write_headers(&this->out_);
 
-  const uint8_t* line = pixels;
+  const uint8_t* line = image.planes8[0];
   ojph::ui32 next_comp = 0;
   ojph::line_buf* cur_line = cs.exchange(NULL, next_comp);
 
-  for (uint32_t i = 0; i < height; ++i) {
-    for (uint32_t c = 0; c < num_comps; c++) {
+  for (uint32_t i = 0; i < image.height; ++i) {
+    for (uint32_t c = 0; c < image.format.comps.num_comps; c++) {
       assert(next_comp == c);
 
       const uint8_t* in = line + c;
       int32_t* out = cur_line->i32;
 
-      for (uint32_t p = 0; p < width; p++) {
+      for (uint32_t p = 0; p < image.width; p++) {
         *out = *in;
         out += 1;
-        in += num_comps;
+        in += image.format.comps.num_comps;
       }
 
       cur_line = cs.exchange(cur_line, next_comp);
     }
 
-    line += num_comps * width;
+    line += image.format.comps.num_comps * image.width;
   }
 
   cs.flush();
@@ -94,7 +85,7 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
     throw std::runtime_error("Memory error");
   }
 
-  libench::CodestreamBuffer cb;
+  libench::CodestreamContext cb;
 
   cb.codestream = (uint8_t*)this->out_.get_data();
   cb.size = (size_t)this->out_.tell();
@@ -108,31 +99,18 @@ libench::CodestreamBuffer libench::OJPHEncoder::encode8(const uint8_t* pixels,
 
 libench::OJPHDecoder::OJPHDecoder(){};
 
-libench::PixelBuffer libench::OJPHDecoder::decodeRGB8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 3);
+libench::ImageContext libench::OJPHDecoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs, 3);
 }
 
-libench::PixelBuffer libench::OJPHDecoder::decodeRGBA8(
-    const uint8_t* codestream,
-    size_t size,
-    uint32_t width,
-    uint32_t height,
-    const uint8_t* init_data,
-    size_t init_data_size) {
-  return this->decode8(codestream, size, 4);
+libench::ImageContext libench::OJPHDecoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs, 4);
 }
 
-libench::PixelBuffer libench::OJPHDecoder::decode8(const uint8_t* codestream,
-                                                   size_t size,
-                                                   uint8_t num_comps) {
+libench::ImageContext libench::OJPHDecoder::decode8(const CodestreamContext& ctx, uint8_t num_comps) {
   ojph::codestream cs;
 
-  this->in_.open(codestream, size);
+  this->in_.open(ctx.codestream, ctx.size);
   cs.read_headers(&this->in_);
 
   ojph::param_siz siz = cs.access_siz();
@@ -170,10 +148,12 @@ libench::PixelBuffer libench::OJPHDecoder::decode8(const uint8_t* codestream,
 
   this->in_.close();
 
-  libench::PixelBuffer pb = {.height = height,
-                             .width = width,
-                             .num_comps = num_comps,
-                             .pixels = &this->pixels_.data()[0]};
+  libench::ImageContext image;
 
-  return pb;
+  image.height = (uint32_t)height;
+  image.width = (uint32_t)width;
+  image.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
+  image.planes8[0] = this->pixels_.data();
+
+  return image;
 }

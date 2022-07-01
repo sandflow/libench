@@ -6,9 +6,6 @@
 #include <sstream>
 #include <chrono>
 #include "cxxopts.hpp"
-extern "C" {
-#include "md5.h"
-}
 #include "jxl_codec.h"
 #include "ojph_codec.h"
 #include "qoi_codec.h"
@@ -21,7 +18,8 @@ extern "C" {
 #define STBI_NO_LINEAR
 #include "stb_image.h"
 
-struct CodestreamContext {
+struct TestContext {
+  libench::ImageContext image;
   uint8_t image_hash[MD5_BLOCK_SIZE];
   std::string codestream_path;
   uint32_t image_sz;
@@ -30,7 +28,7 @@ struct CodestreamContext {
   std::vector<std::chrono::system_clock::time_point::duration> decode_times;
 };
 
-std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
+std::ostream& operator<<(std::ostream& os, const TestContext& ctx) {
   os << "{" << std::endl;
 
   os << "\"decodeTimes\" : [";
@@ -53,11 +51,91 @@ std::ostream& operator<<(std::ostream& os, const CodestreamContext& ctx) {
 
   os << "\"imageSize\" : " << ctx.image_sz << "," << std::endl;
 
-  os << "\"codestreamSize\" : " << ctx.codestream_sz  << std::endl;
+  os << "\"codestreamSize\" : " << ctx.codestream_sz << ","  << std::endl;
+
+  os << "\"imageWidth\" : " << ctx.image.width  << "," << std::endl;
+
+   os << "\"imageHeight\" : " << ctx.image.height  << std::endl;
 
   os << "}" << std::endl;
 
   return os;
+}
+
+libench::ImageContext load_image(const std::string& filepath) {
+  libench::ImageContext image;
+
+  size_t start = filepath.find_last_of(".");
+
+  std::string file_ext = filepath.substr(start + 1);
+
+  if (file_ext == "png") {
+    int height;
+    int width;
+    int num_comps;
+    
+    image.planes8[0] = stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
+    if (! image.planes8[0]) {
+      throw std::runtime_error("Cannot read image file");
+    }
+
+    image.height = height;
+    image.width = width;
+
+    switch (num_comps) {
+      case 3:
+        image.format = libench::ImageFormat::RGB8;
+        break;
+      case 4:
+        image.format = libench::ImageFormat::RGBA8;
+        break;
+      default:
+        throw std::runtime_error("Only RGB or RGBA images are supported");
+    }
+
+  } else if (file_ext == "yuv") {
+    /* must be of the form XXXXXX.<width>x<height>.<pixel_fmt>.yuv */
+
+    size_t end = start - 1;
+    start = filepath.find_last_of(".", end);
+    std::string pix_fmt = filepath.substr(start + 1, end - start);
+
+    end = start - 1;
+    start = filepath.find_last_of("x", end);
+    image.height = std::stoi(filepath.substr(start + 1, end - start));
+
+    end = start - 1;
+    start = filepath.find_last_of(".", end);
+    image.width = std::stoi(filepath.substr(start + 1, end - start));
+
+    if (pix_fmt == "yuv422p10le") {
+      image.format = libench::ImageFormat::YUV422P10;
+
+      std::ifstream in(filepath);
+
+      for(uint8_t i = 0; i < image.format.num_planes(); i++) {
+
+        image.planes16[i] = (uint16_t*) malloc(image.plane_size(i));
+        if (! image.planes16[i]) {
+          throw std::runtime_error("Cannot allocate memory");
+        }
+        
+        in.read((char*) image.planes16[i], image.plane_size(i));
+        if (in.bad()) {
+          throw std::runtime_error("Read failed");
+        }
+      }
+
+    } else {
+      throw std::runtime_error("Unknown pixel format: " + pix_fmt);
+    }
+
+    
+  } else {
+    throw std::runtime_error("Image file must be YUV or PNG");
+  }
+
+  return image;
 }
 
 int main(int argc, char* argv[]) {
@@ -105,33 +183,19 @@ int main(int argc, char* argv[]) {
     throw std::runtime_error("Unknown encoder");
   }
 
-  std::vector<CodestreamContext> ctxs;
-
+  
   auto& filepath = result["file"].as<std::string>();
-  int width;
-  int height;
-  int num_comps;
 
-
-  unsigned char* data =
-      stbi_load(filepath.c_str(), &width, &height, &num_comps, 0);
-
-  if (!data) {
-    throw std::runtime_error("Cannot read image file");
-  }
-
-  if (num_comps < 3 || num_comps > 4) {
-    std::cerr << "Only RGB or RGBA images are supported";
-    return 1;
-  }
+  libench::ImageContext in_img = load_image(filepath);
 
   int repetitions = result["repetitions"].as<int>();
 
-  CodestreamContext ctx;
+  TestContext test;
 
-  ctx.encode_times.resize(repetitions);
-  ctx.decode_times.resize(repetitions);
-  ctx.image_sz = height * width * num_comps;
+  test.image = in_img;
+  test.encode_times.resize(repetitions);
+  test.decode_times.resize(repetitions);
+  test.image_sz = in_img.total_bits() / 8;
 
   /*std::ofstream in_raw(filepath + "." + result["codec"].as<std::string>() + ".in.raw");
   in_raw.write((const char*) data, width * height * num_comps);
@@ -139,33 +203,29 @@ int main(int argc, char* argv[]) {
 
   /* source hash */
 
-  MD5_CTX md5_ctx;
-  md5_init(&md5_ctx);
-  md5_update(&md5_ctx, data, width * height * num_comps);
-  md5_final(&md5_ctx, ctx.image_hash);
+  in_img.md5(test.image_hash);
 
   /* encode */
 
   for (int i = 0; i < repetitions; i++) {
-    libench::CodestreamBuffer cb;
+    libench::CodestreamContext cs;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    switch (num_comps) {
-      case 3:
-        cb = encoder->encodeRGB8(data, width, height);
-        break;
-      case 4:
-        cb = encoder->encodeRGBA8(data, width, height);
-        break;
-      default:
+    if (in_img.format == libench::ImageFormat::RGB8) {
+        cs = encoder->encodeRGB8(in_img);
+    } else if (in_img.format == libench::ImageFormat::RGBA8) {
+        cs = encoder->encodeRGBA8(in_img);
+    } else if (in_img.format == libench::ImageFormat::YUV422P10) {
+        cs = encoder->encodeYUV(in_img);
+    } else {
         throw std::runtime_error("Unsupported number of components");
     }
 
-    ctx.encode_times[i] = std::chrono::high_resolution_clock::now() - start;
+    test.encode_times[i] = std::chrono::high_resolution_clock::now() - start;
 
     if (i == 0) {
-      ctx.codestream_sz = cb.size + cb.init_data_size;
+      test.codestream_sz = cs.size + cs.state_size;
 
       if (result.count("dir")) {
         /* generate the codestream path */
@@ -173,60 +233,58 @@ int main(int argc, char* argv[]) {
 
         ss << result["dir"].as<std::string>() << "/";
 
-        for (int i = 0; i < sizeof(CodestreamContext::image_hash); i++) {
+        for (int i = 0; i < sizeof(TestContext::image_hash); i++) {
           ss << std::hex << std::setfill('0') << std::setw(2) << std::right
-             << (int)ctx.image_hash[i];
+             << (int)test.image_hash[i];
         }
 
-        ctx.codestream_path = ss.str();
+        test.codestream_path = ss.str();
 
         /* write the codestream */
 
-        std::ofstream f(ctx.codestream_path);
-        f.write(reinterpret_cast<char*>(cb.codestream), cb.size);
+        std::ofstream f(test.codestream_path);
+        f.write(reinterpret_cast<char*>(cs.codestream), cs.size);
         f.close();
       }
     }
 
     /* decode */
 
-    libench::PixelBuffer pb;
+    libench::ImageContext out_img;
 
     start = std::chrono::high_resolution_clock::now();
 
-    switch (num_comps) {
-      case 3:
-        pb = decoder->decodeRGB8(cb.codestream, cb.size, width, height, cb.init_data, cb.init_data_size);
-        break;
-      case 4:
-        pb = decoder->decodeRGBA8(cb.codestream, cb.size, width, height, cb.init_data, cb.init_data_size);
-        break;
-      default:
-        throw std::runtime_error("Unsupported number of components");
+    if (in_img.format == libench::ImageFormat::RGB8) {
+      out_img = decoder->decodeRGB8(cs);
+    } else if (in_img.format == libench::ImageFormat::RGBA8) {
+      out_img = decoder->decodeRGBA8(cs);
+    } else if (in_img.format == libench::ImageFormat::YUV422P10) {
+      out_img = decoder->decodeYUV(cs);
+    } else {
+      throw std::runtime_error("Unsupported number of components");
     }
 
-    ctx.decode_times[i] = std::chrono::high_resolution_clock::now() - start;
+    test.decode_times[i] = std::chrono::high_resolution_clock::now() - start;
 
     /*std::ofstream out_raw(filepath + "." + result["codec"].as<std::string>() + ".out.raw");
-    out_raw.write((const char*) pb.pixels, width * height * num_comps);
+    out_raw.write((const char*) out_img.pixels, width * height * num_comps);
     out_raw.close();*/
 
     /* bit exact compare */
 
     uint8_t decoded_hash[MD5_BLOCK_SIZE];
 
-    md5_init(&md5_ctx);
-    md5_update(&md5_ctx, pb.pixels, width * height * num_comps);
-    md5_final(&md5_ctx, decoded_hash);
+    out_img.md5(decoded_hash);
 
-    if (memcmp(decoded_hash, ctx.image_hash, MD5_BLOCK_SIZE))
+    if (memcmp(decoded_hash, test.image_hash, MD5_BLOCK_SIZE))
       throw std::runtime_error("Image does not match");
 
   }
 
-  std::cout << ctx;
+  std::cout << test;
 
-  ctxs.push_back(ctx);
+  for(uint8_t i = 0; i < in_img.format.num_planes(); i++) {
+    free(in_img.planes8[i]);
+  }
 
-  stbi_image_free(data);
 }

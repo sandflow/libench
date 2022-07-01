@@ -9,38 +9,30 @@
 
 libench::PNGEncoder::PNGEncoder() {};
 libench::PNGEncoder::~PNGEncoder() {
-  free(this->cb_.codestream);
+  free(this->cs_.codestream);
 };
 
-libench::CodestreamBuffer libench::PNGEncoder::encodeRGB8(const uint8_t* pixels,
-                                                          uint32_t width,
-                                                          uint32_t height) {
-  return this->encode8(pixels, width, height, 3);
+libench::CodestreamContext libench::PNGEncoder::encodeRGB8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::PNGEncoder::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 4);
+libench::CodestreamContext libench::PNGEncoder::encodeRGBA8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::PNGEncoder::encode8(const uint8_t* pixels,
-                                                       uint32_t width,
-                                                       uint32_t height,
-                                                       uint8_t num_comps) {
+libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &image) {
   int ret;
 
-  free(this->cb_.codestream);
+  free(this->cs_.codestream);
 
-  ret = lodepng_encode_memory(&this->cb_.codestream, &this->cb_.size, pixels,
-                              width, height,
-                              num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
+  ret = lodepng_encode_memory(&this->cs_.codestream, &this->cs_.size, image.planes8[0],
+                              image.width, image.height,
+                              image.format.comps.num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
 
   if (ret)
     throw std::runtime_error("PNG decode failed");
 
-  return this->cb_;
+  return this->cs_;
 }
 
 /*
@@ -48,46 +40,33 @@ libench::CodestreamBuffer libench::PNGEncoder::encode8(const uint8_t* pixels,
  */
 
 libench::PNGDecoder::PNGDecoder() {
-  this->pb_.pixels = NULL;
 };
 
 libench::PNGDecoder::~PNGDecoder() {
-  free(this->pb_.pixels);
+  free(this->image_.planes8[0]);
 };
 
-libench::PixelBuffer libench::PNGDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size,
-                                                     uint32_t width,
-                                                     uint32_t height,
-                                                     const uint8_t* init_data,
-                                                     size_t init_data_size) {
-  return this->decode8(codestream, size, 3);
+libench::ImageContext libench::PNGDecoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs, 3);
 }
 
-libench::PixelBuffer libench::PNGDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 4);
+libench::ImageContext libench::PNGDecoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs, 4);
 }
 
-libench::PixelBuffer libench::PNGDecoder::decode8(const uint8_t* codestream,
-                                                  size_t size,
-                                                  uint8_t num_comps) {
+libench::ImageContext libench::PNGDecoder::decode8(const CodestreamContext& cs, uint8_t num_comps) {
   int ret;
 
-  free(this->pb_.pixels);
+  free(this->image_.planes8[0]);
 
-  this->pb_.num_comps = num_comps;
+  this->image_.format = num_comps == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
 
-  ret = lodepng_decode_memory(&this->pb_.pixels, &this->pb_.width,
-                              &this->pb_.height, codestream, size,
+  ret = lodepng_decode_memory(&this->image_.planes8[0], &this->image_.width,
+                              &this->image_.height, cs.codestream, cs.size,
                               num_comps == 3 ? LCT_RGB : LCT_RGBA, 8);
 
   if (ret)
     throw std::runtime_error("PNG decode failed");
 
-  return this->pb_;
+  return this->image_;
 }

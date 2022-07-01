@@ -12,40 +12,32 @@
 libench::QOIEncoder::QOIEncoder() {};
 
 libench::QOIEncoder::~QOIEncoder() {
-  free(this->cb_.codestream);
+  free(this->cs_.codestream);
 };
 
-libench::CodestreamBuffer libench::QOIEncoder::encodeRGB8(const uint8_t* pixels,
-                                                          uint32_t width,
-                                                          uint32_t height) {
-  return this->encode8(pixels, width, height, 3);
+libench::CodestreamContext libench::QOIEncoder::encodeRGB8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::QOIEncoder::encodeRGBA8(
-    const uint8_t* pixels,
-    uint32_t width,
-    uint32_t height) {
-  return this->encode8(pixels, width, height, 4);
+libench::CodestreamContext libench::QOIEncoder::encodeRGBA8(const ImageContext &image) {
+  return this->encode8(image);
 }
 
-libench::CodestreamBuffer libench::QOIEncoder::encode8(const uint8_t* pixels,
-                                                       uint32_t width,
-                                                       uint32_t height,
-                                                       uint8_t num_comps) {
-  free(this->cb_.codestream);
+libench::CodestreamContext libench::QOIEncoder::encode8(const ImageContext &image) {
+  free(this->cs_.codestream);
 
-  qoi_desc desc = {.width = width,
-                   .height = height,
-                   .channels = num_comps,
+  qoi_desc desc = {.width = image.width,
+                   .height = image.height,
+                   .channels = image.format.comps.num_comps,
                    .colorspace = QOI_SRGB};
 
   int codestream_size;
 
-  this->cb_.codestream = (uint8_t*)qoi_encode(pixels, &desc, &codestream_size);
+  this->cs_.codestream = (uint8_t*)qoi_encode(image.planes8[0], &desc, &codestream_size);
 
-  this->cb_.size = codestream_size;
+  this->cs_.size = codestream_size;
 
-  return this->cb_;
+  return this->cs_;
 }
 
 /*
@@ -53,42 +45,29 @@ libench::CodestreamBuffer libench::QOIEncoder::encode8(const uint8_t* pixels,
  */
 
 libench::QOIDecoder::QOIDecoder() {
-  this->pb_.pixels = NULL;
 };
 
 libench::QOIDecoder::~QOIDecoder() {
-  free(this->pb_.pixels);
+  free(this->image_.planes8[0]);
 };
 
-libench::PixelBuffer libench::QOIDecoder::decodeRGB8(const uint8_t* codestream,
-                                                     size_t size,
-                                                     uint32_t width,
-                                                     uint32_t height,
-                                                     const uint8_t* init_data,
-                                                     size_t init_data_size) {
-  return this->decode8(codestream, size, 3);
+libench::ImageContext libench::QOIDecoder::decodeRGB8(const CodestreamContext& cs) {
+  return this->decode8(cs);
 }
 
-libench::PixelBuffer libench::QOIDecoder::decodeRGBA8(const uint8_t* codestream,
-                                                      size_t size,
-                                                      uint32_t width,
-                                                      uint32_t height,
-                                                      const uint8_t* init_data,
-                                                      size_t init_data_size) {
-  return this->decode8(codestream, size, 4);
+libench::ImageContext libench::QOIDecoder::decodeRGBA8(const CodestreamContext& cs) {
+  return this->decode8(cs);
 }
 
-libench::PixelBuffer libench::QOIDecoder::decode8(const uint8_t* codestream,
-                                                  size_t size,
-                                                  uint8_t num_comps) {
+libench::ImageContext libench::QOIDecoder::decode8(const CodestreamContext& cs) {
   qoi_desc desc;
 
-  free(this->pb_.pixels);
+  free(this->image_.planes8[0]);
 
-  this->pb_.pixels = (uint8_t*)qoi_decode(codestream, size, &desc, num_comps);
-  this->pb_.width = desc.width;
-  this->pb_.height = desc.height;
-  this->pb_.num_comps = num_comps;
+  this->image_.planes8[0] = (uint8_t*)qoi_decode(cs.codestream, cs.size, &desc, 0);
+  this->image_.width = desc.width;
+  this->image_.height = desc.height;
+  this->image_.format = desc.channels == 3 ? libench::ImageFormat::RGB8 : libench::ImageFormat::RGBA8;
 
-  return this->pb_;
+  return this->image_;
 }

@@ -30,38 +30,24 @@ class Result:
   run_count: int
 
 @dataclasses.dataclass
-class CodecPreferences:
+class CodecInfo:
   """Preferences for a single codec"""
   color: str
   marker: str
+  formats: typing.Iterable[str]
 
 # colors from http://www.sussex.ac.uk/tel/resource/tel_website/accessiblecontrast
 CODEC_PREFS = {
-    "j2k_ht_ojph": CodecPreferences(color="#41b6e6", marker="o"),
-    "j2k_1_kdu": CodecPreferences(color="#41b6e6", marker="v"),
-    "j2k_ht_kdu": CodecPreferences(color="#41b6e6", marker="s"),
-    "jxl": CodecPreferences(color="#e56db1", marker="o"),
-    "qoi": CodecPreferences(color="#dc582a", marker="o"),
-    "png": CodecPreferences(color="#f2c75c", marker="o"),
-    "ffv1": CodecPreferences(color="#94a596", marker="o")
+    "j2k_ht_ojph": CodecInfo(color="#41b6e6", marker="o", formats=["RGBA8", "RGB8"]),
+    "j2k_1_kdu": CodecInfo(color="#41b6e6", marker="v", formats=["RGBA8", "RGB8", "YUV"]),
+    "j2k_ht_kdu": CodecInfo(color="#41b6e6", marker="s", formats=["RGBA8", "RGB8", "YUV"]),
+    "jxl": CodecInfo(color="#e56db1", marker="o", formats=["RGBA8", "RGB8"]),
+    "qoi": CodecInfo(color="#dc582a", marker="o", formats=["RGBA8", "RGB8"]),
+    "png": CodecInfo(color="#f2c75c", marker="o", formats=["RGBA8", "RGB8"]),
+    "ffv1": CodecInfo(color="#94a596", marker="o", formats=["RGBA8", "RGB8", "YUV"])
 }
 
-def make_index(build_dir_path: str, version_string: str, machine_string: str, compiler_string: str):
-  # build input to template engine
-  results = {
-    "date": datetime.now().isoformat(),
-    "version": version_string,
-    "machine": machine_string,
-    "compiler": compiler_string
-  }
-
-  # apply template
-  with open("src/main/resources/hbs/index.hbs", "r", encoding="utf-8") as template_file:
-    with open(os.path.join(build_dir_path, "index.html"), "w", encoding="utf-8") as index_file:
-      index_file.write(chevron.render(template_file, results))
-
-def make_analysis(results_path: str, build_dir_path: str):
-  df = pd.read_csv(results_path)
+def make_analysis(df, msg: str, fig_name: str, build_dir_path: str):
   df_by_set = df.groupby(["set_name", "codec_name"]).mean().reset_index().groupby("set_name")
   n_plots = len(df_by_set)
   n_cols = 3
@@ -92,7 +78,7 @@ def make_analysis(results_path: str, build_dir_path: str):
     x_padding = ax.get_xbound()[1] * 0.05
     ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
 
-    if i == 1:
+    if i == 0:
       ax.legend(loc='lower left')
 
     for r in gdf.itertuples():
@@ -109,10 +95,10 @@ def make_analysis(results_path: str, build_dir_path: str):
 
   fig.supxlabel("Encode time (s)")
   fig.supylabel("Coded size (byte)", x=0.01)
-  fig.suptitle('Encoding performance (RGB(A), 8-bit, single thread)', fontsize=16, va="bottom", y=0.99)
+  fig.suptitle(f'Encoding performance ({msg})', fontsize=16, y=(1 - 0.01 / fig_height))
   fig.set_dpi(300)
   fig.tight_layout()
-  fig.savefig(os.path.join(build_dir_path, "encode-stats.png"))
+  fig.savefig(os.path.join(build_dir_path, f"{fig_name}-encode.png"))
 
   fig, axs = plt.subplots(n_rows, n_cols, figsize=(fig_width, fig_height), squeeze=False)
 
@@ -137,7 +123,7 @@ def make_analysis(results_path: str, build_dir_path: str):
     x_padding = ax.get_xbound()[1] * 0.05
     ax.set_xbound(lower=-x_padding, upper=ax.get_xbound()[1] + x_padding)
 
-    if i == 1:
+    if i == 0:
       ax.legend(loc='lower left')
 
     for r in gdf.itertuples():
@@ -155,9 +141,9 @@ def make_analysis(results_path: str, build_dir_path: str):
   fig.supxlabel("Decode time (s)")
   fig.supylabel("Coded size (byte)", x=0.01)
   fig.set_dpi(300)
-  fig.suptitle('Decoding performance (RGB(A), 8-bit, single thread)', fontsize=16, va="bottom", y=0.99)
+  fig.suptitle(f'Decoding performance ({msg})', fontsize=16, y=(1 - 0.01 / fig_height))
   fig.tight_layout()
-  fig.savefig(os.path.join(build_dir_path, "decode-stats.png"))
+  fig.savefig(os.path.join(build_dir_path, f"{fig_name}-decode.png"))
 
 def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
@@ -169,26 +155,35 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
   for dirpath, _dirnames, filenames in os.walk(root_path):
     collection_name = os.path.relpath(dirpath, root_path)
     print(f"Collection: {collection_name}")
+
     for fn in filenames:
-      if os.path.splitext(fn)[1] != ".png":
-        continue
 
       file_path = os.path.join(dirpath, fn)
 
-      png_width, png_height, _png_rows, png_info = png.Reader(filename=file_path).read(lenient=True)
+      if os.path.splitext(fn)[1] == ".png":
+        _, _, _png_rows, png_info = png.Reader(filename=file_path).read(lenient=True)
 
-      if png_info["greyscale"] or png_info["bitdepth"] != 8:
+        if png_info["greyscale"] or png_info["bitdepth"] != 8:
+          continue
+
+        image_format = "RGBA8" if png_info["alpha"] else "RGB8"
+
+      elif os.path.splitext(fn)[1] == ".yuv":
+        image_format = "YUV"
+
+      else:
         continue
-
-      png_format = "RGBA8" if png_info["alpha"] else "RGB8"
 
       rel_path = os.path.relpath(file_path, root_path)
 
-      print(f"{rel_path} ({png_format}): ", end="")
+      print(f"{rel_path} ({image_format}): ", end="")
 
       run_count = 3
 
-      for codec_name in CODEC_PREFS.keys():
+      for codec_name, codec_info in CODEC_PREFS.items():
+
+        if not image_format in codec_info.formats:
+          continue
 
         try:
           stdout = json.loads(
@@ -201,9 +196,9 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
               decode_time=sum(stdout["decodeTimes"])/len(stdout["decodeTimes"]),
               coded_size=stdout["codestreamSize"],
               image_size=stdout["imageSize"],
-              image_height=png_height,
-              image_width=png_width,
-              image_format=png_format,
+              image_height=stdout["imageHeight"],
+              image_width=stdout["imageWidth"],
+              image_format=image_format,
               image_path=rel_path,
               set_name=collection_name,
               run_count=len(stdout["encodeTimes"])
@@ -215,7 +210,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
         except (json.decoder.JSONDecodeError, subprocess.CalledProcessError):
           print("x", end="")
-          raise
+          #raise
 
       print()
 
@@ -247,9 +242,34 @@ def _main():
       for result in results:
         writer.writerow(dataclasses.asdict(result))
 
-  make_analysis(results_path, args.build_path)
+  df = pd.read_csv(results_path)
 
-  make_index(args.build_path, args.version, args.machine, args.compiler)
+  panels = []
+
+
+
+  df_rgb = df[df.image_format.isin(["RGBA8", "RGB8"])]
+  if not df_rgb.empty:
+    make_analysis(df_rgb, "RGB(A), 8-bit, single thread", "rgb", args.build_path)
+    panels.append({"name": "RGB(A)", "id": "rgb", "active": "true"})
+
+  df_yuv = df[df.image_format.isin(["YUV"])]
+  if not df_yuv.empty:
+    make_analysis(df_yuv, "YCbCr, 10-bit, single thread", "yuv", args.build_path)
+    panels.append({"name": "YCbCr", "id": "yuv"})
+
+  results = {
+    "date": datetime.now().isoformat(),
+    "version": args.version,
+    "machine": args.machine,
+    "compiler": args.compiler,
+    "panels": panels
+  }
+
+  # apply template
+  with open("src/main/resources/hbs/index.hbs", "r", encoding="utf-8") as template_file:
+    with open(os.path.join(args.build_path, "index.html"), "w", encoding="utf-8") as index_file:
+      index_file.write(chevron.render(template_file, results))
 
 if __name__ == "__main__":
   _main()

@@ -13,19 +13,13 @@ class OJPHEncoder : public Encoder {
  public:
   OJPHEncoder();
 
-  virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                      const uint32_t width,
-                                      uint32_t height);
+  CodestreamContext encodeRGB8(const ImageContext &image);
 
-  virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                       uint32_t width,
-                                       uint32_t height);
+  CodestreamContext encodeRGBA8(const ImageContext &image);
 
  private:
-  CodestreamBuffer encode8(const uint8_t* pixels,
-                           uint32_t width,
-                           uint32_t height,
-                           uint8_t num_comps);
+  CodestreamContext encode8(const ImageContext &image);
+
   ojph::mem_outfile out_;
 };
 
@@ -33,24 +27,13 @@ class OJPHDecoder : public Decoder {
  public:
   OJPHDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
-                                 size_t size,
-                                 uint32_t width,
-                                 uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+  virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
-                                  size_t size,
-                                  uint32_t width,
-                                  uint32_t height,
-                                  const uint8_t* init_data,
-                                  size_t init_data_size);
+  virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
  private:
-  PixelBuffer decode8(const uint8_t* codestream,
-                      size_t size,
-                      uint8_t num_comps);
+  ImageContext decode8(const CodestreamContext& cs, uint8_t num_comps);
+
   ojph::mem_infile in_;
   std::vector<uint8_t> pixels_;
 };

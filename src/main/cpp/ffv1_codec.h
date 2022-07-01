@@ -17,19 +17,15 @@ class FFV1Encoder : public Encoder {
   FFV1Encoder();
   ~FFV1Encoder();
 
-  virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                      const uint32_t width,
-                                      uint32_t height);
+  virtual CodestreamContext encodeRGB8(const ImageContext &image);
 
-  virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                       uint32_t width,
-                                       uint32_t height);
+  virtual CodestreamContext encodeRGBA8(const ImageContext &image);
+
+  virtual CodestreamContext encodeYUV(const ImageContext &image);
 
  private:
-  CodestreamBuffer encode8(const uint8_t* pixels,
-                           uint32_t width,
-                           uint32_t height,
-                           uint8_t num_comps);
+  CodestreamContext encode(const ImageContext &image);
+
   AVPacket* pkt_;
   AVFrame* frame_;
   const AVCodec* codec_;
@@ -40,34 +36,20 @@ class FFV1Decoder : public Decoder {
  public:
   FFV1Decoder();
   ~FFV1Decoder();
+  
+  virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
-                                 size_t size,
-                                 uint32_t width,
-                                 uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+  virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
-                                  size_t size,
-                                  uint32_t width,
-                                  uint32_t height,
-                                  const uint8_t* init_data,
-                                  size_t init_data_size);
+  virtual ImageContext decodeYUV(const CodestreamContext& cs);
 
  private:
-  PixelBuffer decode8(const uint8_t* codestream,
-                      size_t size,
-                      uint8_t num_comps,
-                      uint32_t width,
-                      uint32_t height,
-                      const uint8_t* init_data,
-                      size_t init_data_size);
+  ImageContext decode(const CodestreamContext& cs);
 
   AVPacket* pkt_;
   AVFrame* frame_;
   const AVCodec* codec_;
-  std::vector<uint8_t> pixels_;
+  std::vector<uint8_t> planes_[3];
 };
 
 }  // namespace libench

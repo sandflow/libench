@@ -39,19 +39,15 @@ class KDUEncoder : public Encoder {
  public:
   KDUEncoder(bool isHT = true);
 
-  virtual CodestreamBuffer encodeRGB8(const uint8_t* pixels,
-                                      const uint32_t width,
-                                      uint32_t height);
+  virtual CodestreamContext encodeRGB8(const ImageContext &image);
 
-  virtual CodestreamBuffer encodeRGBA8(const uint8_t* pixels,
-                                       uint32_t width,
-                                       uint32_t height);
+  virtual CodestreamContext encodeRGBA8(const ImageContext &image);
+
+  virtual CodestreamContext encodeYUV(const ImageContext &image);
 
  private:
-  CodestreamBuffer encode8(const uint8_t* pixels,
-                           uint32_t width,
-                           uint32_t height,
-                           uint8_t num_comps);
+  CodestreamContext encode(const ImageContext &image);
+
   mem_compressed_target out_;
   bool isHT_;
 };
@@ -60,26 +56,16 @@ class KDUDecoder : public Decoder {
  public:
   KDUDecoder();
 
-  virtual PixelBuffer decodeRGB8(const uint8_t* codestream,
-                                 size_t size,
-                                 uint32_t width,
-                                 uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+  virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
-  virtual PixelBuffer decodeRGBA8(const uint8_t* codestream,
-                                  size_t size,
-                                  uint32_t width,
-                                  uint32_t height,
-                                 const uint8_t* init_data,
-                                 size_t init_data_size);
+  virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
+
+  virtual ImageContext decodeYUV(const CodestreamContext& cs);
 
  private:
-  PixelBuffer decode8(const uint8_t* codestream,
-                      size_t size,
-                      uint8_t num_comps);
+  ImageContext decode(const CodestreamContext& cs);
 
-  std::vector<uint8_t> pixels_;
+  std::vector<uint8_t> planes_[3];
 };
 
 }  // namespace libench
