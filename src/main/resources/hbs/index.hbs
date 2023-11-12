@@ -32,11 +32,17 @@
       <h2 class="fw-bold text-center">Lossless Image Coding Benchmarks</h2>
 
       <p class="mt-4 lead">Lossless <a href="#encoding">encoding</a> and <a href="decoding">decoding</a> benchmarks
-        using the <a href="https://qoiformat.org/benchmark/">QOI image set</a>
-        and frames from the <a href="http://download.opencontent.netflix.com/?prefix=Meridian/">Netflix
-          Meridian</a> test reel <a
-          href="https://libench-images.s3.amazonaws.com/meridian_500_skip_frames.zip">(download)</a>. All images are
-        RGB(A) and 8 bits per pixel component. </p>
+        using the:
+
+      <ul>
+        <li>8-bit RGB(A) images from the <a href="https://qoiformat.org/benchmark/">QOI image set</a></li>
+        <li><a href="https://libench-images.s3.amazonaws.com/meridian_500_skip_frames.zip">8-bit RGB frames</a> generated from the
+          <a href="http://download.opencontent.netflix.com/?prefix=Meridian/">Netflix
+            Meridian</a> test reel</a></li>
+        <li><a href="https://libench-images.s3.amazonaws.com/loc_220420WE.zip">YCbCr 10-bit frames</a> from a recording
+          of the US Congress in session (kindly provided by the Library of Congress)</li>
+      </ul>
+      </p>
 
       <p>Each plot is for a set of images with similar characteristics.
         The <em>vertical axis</em> is the <em>average size in bytes</em> of a coded image in the set. The <em>horizontal
@@ -98,12 +104,12 @@
     </section>
 
     <section class="container">
-      
+
       <ul class="nav nav-tabs" id="results-tab" role="tablist">
         {{#panels}}
         <li class="nav-item" role="presentation">
-          <button class="nav-link {{#active}}active{{/active}}" id="{{id}}-tab" data-bs-toggle="tab" data-bs-target="#{{id}}-tab-pane"
-            type="button" role="tab">{{name}}</button>
+          <button class="nav-link {{#active}}active{{/active}}" id="{{id}}-tab" data-bs-toggle="tab"
+            data-bs-target="#{{id}}-tab-pane" type="button" role="tab">{{name}}</button>
         </li>
         {{/panels}}
       </ul>
