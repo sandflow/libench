@@ -7,14 +7,14 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 # Kakadu SDK support
 
 find_path(KDU_INCLUDE_DIR kdu_args.h PATH_SUFFIXES kakadu)
-find_library(KDU_LIBRARY NAMES libkdu_a82R)
+find_library(KDU_LIBRARY NAMES kdu_a84R)
 
 if(KDU_INCLUDE_DIR AND KDU_LIBRARY)
   set(KDU_PRESENT 1)
   message("Kakadu SDK found: ${KDU_LIBRARY} and ${KDU_INCLUDE_DIR}")
   include_directories(${KDU_INCLUDE_DIR})
 else()
-  message("Kakadu SDK not found.")
+  message("Kakadu SDK not found: ${KDU_LIBRARY} and ${KDU_INCLUDE_DIR}.")
 endif()
 
 # OpenJPH support
