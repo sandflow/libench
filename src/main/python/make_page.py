@@ -210,7 +210,7 @@ def run_perf_tests(root_path: str, bin_path: str) -> typing.List[Result]:
 
         except (json.decoder.JSONDecodeError, subprocess.CalledProcessError):
           print("x", end="")
-          #raise
+          raise
 
       print()
 
