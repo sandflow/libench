@@ -49,9 +49,8 @@ set(JPEGXL_ENABLE_OPENEXR FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_TRANSCODE_JPEG FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_BUNDLE_SKCMS FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_MANPAGES FALSE CACHE INTERNAL "" FORCE)
-include_directories(ext/libjxl/experimental/fast_lossless ext/libjxl/lib/include "${PROJECT_BINARY_DIR}/ext/libjxl/lib/include")
-add_library(fast_lossless ext/libjxl/experimental/fast_lossless/fast_lossless.cc)
-add_subdirectory(ext/libjxl EXCLUDE_FROM_ALL)
+set(JPEGXL_ENABLE_AVX512 TRUE CACHE INTERNAL "" FORCE)
+add_subdirectory(ext/libjxl)
 
 # ffmpeg
 
@@ -83,7 +82,7 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
 add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
-target_link_libraries(libench openjph md5 jxl jxl_threads fast_lossless libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+target_link_libraries(libench openjph md5 jxl libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 # tests
 
