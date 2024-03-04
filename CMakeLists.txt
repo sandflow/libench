@@ -67,6 +67,7 @@ ExternalProject_Add(ffmpeg
 )
 include_directories(${PROJECT_BINARY_DIR}/ext/ffmpeg/include)
 add_library(libavcodec STATIC IMPORTED)
+target_link_libraries(libavcodec INTERFACE pthread)
 add_dependencies(libavcodec ffmpeg)
 set_target_properties(libavcodec PROPERTIES IMPORTED_LOCATION ${FFMPEG_INSTALL_DIR}/lib/libavcodec.a)
 add_library(libavutil STATIC IMPORTED)
