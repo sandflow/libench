@@ -3,7 +3,7 @@
 	url = https://github.com/phoboslab/qoi.git
 [submodule "ext/libjxl"]
 	path = ext/libjxl
-	url = https://github.com/palemieux/libjxl.git
+	url = https://github.com/libjxl/libjxl.git
 [submodule "ext/OpenJPH"]
 	path = ext/OpenJPH
 	url = https://github.com/aous72/OpenJPH.git
