@@ -141,12 +141,12 @@ libench::ImageContext load_image(const std::string& filepath) {
 int main(int argc, char* argv[]) {
   cxxopts::Options options("libench", "Lossless image codec benchmark");
 
-  options.add_options()("dir", "Codesteeam directory path",
+  options.add_options()("dir", "Codestream directory path",
                         cxxopts::value<std::string>())(
-      "r,repetitions", "Codesteeam directory path",
+      "r,repetitions", "Codestream directory path",
       cxxopts::value<int>()->default_value("5"))(
       "file", "Input image", cxxopts::value<std::string>())(
-      "codec", "Coded to profile", cxxopts::value<std::string>());
+      "codec", "Codec to profile", cxxopts::value<std::string>());
 
   options.parse_positional({"codec", "file"});
 
