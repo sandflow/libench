@@ -1,4 +1,5 @@
 #include "cxxopts.hpp"
+#include "avif_codec.h"
 #include "ffv1_codec.h"
 #include "jxl_codec.h"
 #include "kduht_codec.h"
@@ -157,6 +158,9 @@ int main(int argc, char* argv[]) {
   if (result["codec"].as<std::string>() == "j2k_ht_ojph") {
     encoder.reset(new libench::OJPHEncoder());
     decoder.reset(new libench::OJPHDecoder());
+  } else if (result["codec"].as<std::string>() == "avif") {
+    encoder.reset(new libench::AVIFEncoder());
+    decoder.reset(new libench::AVIFDecoder());
   } else if (result["codec"].as<std::string>() == "qoi") {
     encoder.reset(new libench::QOIEncoder());
     decoder.reset(new libench::QOIDecoder());
