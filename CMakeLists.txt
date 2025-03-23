@@ -40,6 +40,13 @@ include_directories(ext/qoi)
 
 include_directories(ext/cxxopts/include)
 
+# avif
+
+set(AVIF_CODEC_AOM LOCAL CACHE INTERNAL "" FORCE)
+set(AVIF_CODEC_DAV1D LOCAL CACHE INTERNAL "" FORCE)
+set(AVIF_LIBYUV LOCAL CACHE INTERNAL "" FORCE)
+add_subdirectory(ext/libavif)
+
 # jxl
 
 set(JPEGXL_ENABLE_BENCHMARK FALSE CACHE INTERNAL "" FORCE)
@@ -83,13 +90,15 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
 add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
-target_link_libraries(libench openjph md5 jxl libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+target_link_libraries(libench openjph md5 avif jxl libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 # tests
 
 enable_testing()
 
 add_test(NAME "j2k_ht_ojph" COMMAND libench j2k_ht_ojph ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "avif-rgb" COMMAND libench avif ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "avif-rgba" COMMAND libench avif ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 add_test(NAME "qoi-rgb" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "qoi-rgba" COMMAND libench qoi ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 add_test(NAME "jxl-rgb" COMMAND libench jxl ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
