@@ -63,16 +63,31 @@ def make_analysis(df, msg: str, fig_name: str, build_dir_path: str):
       fig.delaxes(axs[-1, i])
 
   for (i, (label, gdf)) in enumerate(df_by_set):
+    max_avg_coded_size = 0
+    avg_image_size = 0
     ax = axs[i // n_cols, i % n_cols]
     for j in range(len(gdf["encode_time"])):
       colors = CODEC_PREFS[gdf["codec_name"].iloc[j]].color
       markers = CODEC_PREFS[gdf["codec_name"].iloc[j]].marker
       ax.scatter(gdf["encode_time"].iloc[j], gdf["coded_size"].iloc[j], s=80, marker=markers, c=colors, label=gdf["codec_name"].iloc[j])
-    
+      if gdf["coded_size"].iloc[j] > max_avg_coded_size:
+        max_avg_coded_size = gdf["coded_size"].iloc[j]
+        avg_image_size =  gdf["image_size"].iloc[j]
+
     ax.set(ylabel=None)
     ax.set(xlabel=None)
-    ax.set_title(label, pad=20, fontsize="medium")
+    ax.set_title(f"{label} (Avg. size: {round(avg_image_size/1024):,} kb)", pad=20, fontsize="medium")
     ax.ticklabel_format(style="sci", scilimits=(-2,2))
+
+    ax.axhline(y=max_avg_coded_size)
+    ax.annotate(
+      f"Coding effiency: {avg_image_size / max_avg_coded_size:.2f}x",
+      (ax.get_xbound()[1]/2, max_avg_coded_size),
+      horizontalalignment="center",
+      xytext=(0, 1),
+      textcoords="offset points",
+      c="#555588"
+    )
 
     y_padding = ax.get_ybound()[1] * 0.05
     ax.set_ybound(lower=-y_padding, upper=ax.get_ybound()[1] + y_padding)
