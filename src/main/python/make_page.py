@@ -76,7 +76,7 @@ def make_analysis(df, msg: str, fig_name: str, build_dir_path: str):
 
     ax.set(ylabel=None)
     ax.set(xlabel=None)
-    ax.set_title(f"{label} (Avg. size: {round(avg_image_size/1024):,} kb)", pad=20, fontsize="medium")
+    ax.set_title(f"{label} (avg. size {round(avg_image_size/1024):,} kb)", pad=20, fontsize="medium")
     ax.ticklabel_format(style="sci", scilimits=(-2,2))
 
     ax.axhline(y=max_avg_coded_size)
