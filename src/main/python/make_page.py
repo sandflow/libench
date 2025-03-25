@@ -76,15 +76,15 @@ def make_analysis(df, msg: str, fig_name: str, build_dir_path: str):
 
     ax.set(ylabel=None)
     ax.set(xlabel=None)
-    ax.set_title(f"{label} (avg. size {round(avg_image_size/1024):,} kb)", pad=20, fontsize="medium")
+    ax.set_title(f"{label}\n(avg. uncompressed size: {round(avg_image_size/1024):,} kB)", pad=20, fontsize="medium")
     ax.ticklabel_format(style="sci", scilimits=(-2,2))
 
     ax.axhline(y=max_avg_coded_size)
     ax.annotate(
-      f"Coding effiency: {avg_image_size / max_avg_coded_size:.2f}x",
+      f"Compression ratio: {avg_image_size / max_avg_coded_size:.2f}:1",
       (ax.get_xbound()[1]/2, max_avg_coded_size),
       horizontalalignment="center",
-      xytext=(0, 1),
+      xytext=(0, 2),
       textcoords="offset points",
       c="#555588"
     )
