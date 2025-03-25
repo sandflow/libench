@@ -26,3 +26,6 @@
 [submodule "ext/libavif"]
 	path = ext/libavif
 	url = https://github.com/AOMediaCodec/libavif.git
+[submodule "ext/libwebp"]
+	path = ext/libwebp
+	url = https://chromium.googlesource.com/webm/libwebp
