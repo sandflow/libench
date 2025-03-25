@@ -13,7 +13,7 @@ static ojph::size IMF_PRECINCTS[] = {ojph::size(256, 256), ojph::size(256, 256),
                                      ojph::size(256, 256), ojph::size(256, 256),
                                      ojph::size(128, 128)};
 
-libench::OJPHEncoder::OJPHEncoder(){};
+libench::OJPHEncoder::OJPHEncoder(){}
 
 libench::CodestreamContext libench::OJPHEncoder::encodeRGB8(const ImageContext &image) {
   return this->encode8(image);
@@ -97,7 +97,7 @@ libench::CodestreamContext libench::OJPHEncoder::encode8(const ImageContext &ima
  * OJPHDecoder
  */
 
-libench::OJPHDecoder::OJPHDecoder(){};
+libench::OJPHDecoder::OJPHDecoder(){}
 
 libench::ImageContext libench::OJPHDecoder::decodeRGB8(const CodestreamContext& cs) {
   return this->decode8(cs, 3);

@@ -102,7 +102,7 @@ struct ImageContext {
   uint32_t plane_height(int i) const {
     return this->height / this->format.y_sub_factor[i];
   }
-  
+
 
   uint32_t line_size(int i) const {
     if (this->format.is_planar) {
@@ -127,11 +127,11 @@ struct ImageContext {
     MD5_CTX md5_ctx;
 
     md5_init(&md5_ctx);
-    
+
     for(uint8_t i = 0; i < this->format.num_planes(); i++) {
       md5_update(&md5_ctx, this->planes8[i], this->plane_size(i));
     }
-    
+
     md5_final(&md5_ctx, hash);
   }
 };
@@ -140,15 +140,15 @@ class Encoder {
  public:
   virtual CodestreamContext encodeRGB8(const ImageContext &image) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual CodestreamContext encodeRGBA8(const ImageContext &image) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual CodestreamContext encodeYUV(const ImageContext &image) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual ~Encoder() {}
 };
@@ -157,19 +157,19 @@ class Decoder {
  public:
   virtual ImageContext decodeRGB8(const CodestreamContext& cs) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual ImageContext decodeRGBA8(const CodestreamContext& cs) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual ImageContext decodeYUV(const CodestreamContext& cs) {
     throw std::runtime_error("Not yet implemented");
-  };
+  }
 
   virtual ~Decoder() {}
 };
 
-};  // namespace libench
+}  // namespace libench
 
 #endif

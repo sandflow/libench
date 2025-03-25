@@ -7,10 +7,11 @@
  * PNGEncoder
  */
 
-libench::PNGEncoder::PNGEncoder() {};
+libench::PNGEncoder::PNGEncoder() {}
+
 libench::PNGEncoder::~PNGEncoder() {
   free(this->cs_.codestream);
-};
+}
 
 libench::CodestreamContext libench::PNGEncoder::encodeRGB8(const ImageContext &image) {
   return this->encode8(image);
@@ -40,11 +41,11 @@ libench::CodestreamContext libench::PNGEncoder::encode8(const ImageContext &imag
  */
 
 libench::PNGDecoder::PNGDecoder() {
-};
+}
 
 libench::PNGDecoder::~PNGDecoder() {
   free(this->image_.planes8[0]);
-};
+}
 
 libench::ImageContext libench::PNGDecoder::decodeRGB8(const CodestreamContext& cs) {
   return this->decode8(cs, 3);

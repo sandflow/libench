@@ -43,7 +43,7 @@ libench::FFV1Encoder::~FFV1Encoder() {
 
 libench::CodestreamContext libench::FFV1Encoder::encode(const ImageContext &image) {
   int ret;
-  AVDictionary *opts = NULL; 
+  AVDictionary *opts = NULL;
 
   avcodec_free_context(&this->codec_ctx_);
 

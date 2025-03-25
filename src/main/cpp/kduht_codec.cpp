@@ -33,7 +33,7 @@ static error_message_handler error_handler;
 
 libench::KDUEncoder::KDUEncoder(bool isHT) : isHT_(isHT){
   kdu_core::kdu_customize_errors(&error_handler);
-};
+}
 
 libench::CodestreamContext libench::KDUEncoder::encodeRGB8(const ImageContext &image) {
   return this->encode(image);
@@ -91,7 +91,7 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
 
     int precisions[4];
     bool is_signed[4];
-    
+
     for(uint8_t i = 0; i < image.format.comps.num_comps; i++) {
       precisions[i] = (int) image.format.bit_depth;
       is_signed[i] = false;
@@ -104,7 +104,7 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
   compressor.finish();
 
   libench::CodestreamContext cb;
-  
+
   cb.codestream = this->out_.get_buffer().data();
   cb.size = this->out_.get_buffer().size();
 
@@ -115,7 +115,7 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
  * KDUDecoder
  */
 
-libench::KDUDecoder::KDUDecoder(){};
+libench::KDUDecoder::KDUDecoder(){}
 
 libench::ImageContext libench::KDUDecoder::decodeRGB8(const CodestreamContext& cs) {
   return this->decode(cs);
@@ -176,7 +176,7 @@ libench::ImageContext libench::KDUDecoder::decode(const CodestreamContext& cs) {
   kdu_stripe_decompressor d;
 
   int stripe_heights[4] = {(int) image.height, (int) image.height, (int) image.height, (int) image.height};
-  
+
   d.start(c);
 
   if (image.format.is_planar) {
@@ -190,7 +190,7 @@ libench::ImageContext libench::KDUDecoder::decode(const CodestreamContext& cs) {
       precisions[i] = (int) image.format.bit_depth;
       is_signed[i] = false;
     }
-    
+
     if (! image.is_plane16()) {
       throw std::runtime_error("Only YUV 10 bits supported.");
     }
@@ -207,7 +207,7 @@ libench::ImageContext libench::KDUDecoder::decode(const CodestreamContext& cs) {
     image.planes8[0] = this->planes_[0].data();
 
     d.pull_stripe(this->planes_[0].data(), stripe_heights);
-    
+
   }
 
   d.finish();
