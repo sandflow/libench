@@ -9,11 +9,11 @@
  * QOIEncoder
  */
 
-libench::QOIEncoder::QOIEncoder() {};
+libench::QOIEncoder::QOIEncoder() {}
 
 libench::QOIEncoder::~QOIEncoder() {
   free(this->cs_.codestream);
-};
+}
 
 libench::CodestreamContext libench::QOIEncoder::encodeRGB8(const ImageContext &image) {
   return this->encode8(image);
@@ -45,11 +45,11 @@ libench::CodestreamContext libench::QOIEncoder::encode8(const ImageContext &imag
  */
 
 libench::QOIDecoder::QOIDecoder() {
-};
+}
 
 libench::QOIDecoder::~QOIDecoder() {
   free(this->image_.planes8[0]);
-};
+}
 
 libench::ImageContext libench::QOIDecoder::decodeRGB8(const CodestreamContext& cs) {
   return this->decode8(cs);

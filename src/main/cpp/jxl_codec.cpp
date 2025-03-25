@@ -18,11 +18,11 @@ template class libench::JXLEncoder<1>;
 template class libench::JXLEncoder<2>;
 template class libench::JXLEncoder<3>;
 
-template <int E> libench::JXLEncoder<E>::JXLEncoder(){};
+template <int E> libench::JXLEncoder<E>::JXLEncoder(){}
 
 template <int E> libench::JXLEncoder<E>::~JXLEncoder() {
   free(this->cb_.codestream);
-};
+}
 
 template <int E, bool rgba>
 static size_t JxlEncode(void *image_data, size_t width, size_t height,
@@ -118,7 +118,7 @@ libench::JXLEncoder<E>::encodeRGBA8(const ImageContext &image) {
  * JXLDecoder
  */
 
-libench::JXLDecoder::JXLDecoder(){};
+libench::JXLDecoder::JXLDecoder(){}
 
 libench::ImageContext
 libench::JXLDecoder::decodeRGB8(const CodestreamContext &cs) {

@@ -36,7 +36,7 @@ class FFV1Decoder : public Decoder {
  public:
   FFV1Decoder();
   ~FFV1Decoder();
-  
+
   virtual ImageContext decodeRGB8(const CodestreamContext& cs);
 
   virtual ImageContext decodeRGBA8(const CodestreamContext& cs);
