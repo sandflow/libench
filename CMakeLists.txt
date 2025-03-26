@@ -68,7 +68,7 @@ include(ExternalProject)
 set(FFMPEG_INSTALL_DIR ${CMAKE_BINARY_DIR}/ext/ffmpeg)
 ExternalProject_Add(ffmpeg
   SOURCE_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/ext/ffmpeg
-  CONFIGURE_COMMAND ./configure --disable-avdevice --disable-avformat --disable-swresample --disable-swscale --disable-avfilter --disable-doc --disable-programs --disable-everything --enable-encoder=ffv1 --enable-decoder=ffv1 --prefix=${FFMPEG_INSTALL_DIR}
+  CONFIGURE_COMMAND ./configure --disable-autodetect --disable-avdevice --disable-avformat --disable-swresample --disable-swscale --disable-avfilter --disable-doc --disable-programs --disable-everything --enable-encoder=ffv1 --enable-decoder=ffv1 --prefix=${FFMPEG_INSTALL_DIR}
   BUILD_COMMAND     make -j${CONCURRENCY}
   BUILD_IN_SOURCE   TRUE
 )
