@@ -19,7 +19,7 @@ endif()
 
 # OpenJPH support
 
-add_subdirectory(ext/OpenJPH)
+add_subdirectory(ext/OpenJPH EXCLUDE_FROM_ALL)
 set_property(DIRECTORY ext/OpenJPH PROPERTY OJPH_ENABLE_TIFF_SUPPORT OFF)
 
 include_directories(ext/OpenJPH/src/core/common)
@@ -45,7 +45,7 @@ include_directories(ext/cxxopts/include)
 set(AVIF_CODEC_AOM LOCAL CACHE INTERNAL "" FORCE)
 set(AVIF_CODEC_DAV1D LOCAL CACHE INTERNAL "" FORCE)
 set(AVIF_LIBYUV LOCAL CACHE INTERNAL "" FORCE)
-add_subdirectory(ext/libavif)
+add_subdirectory(ext/libavif EXCLUDE_FROM_ALL)
 
 # jxl
 
@@ -57,7 +57,7 @@ set(JPEGXL_ENABLE_TRANSCODE_JPEG FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_BUNDLE_SKCMS FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_MANPAGES FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_AVX512 TRUE CACHE INTERNAL "" FORCE)
-add_subdirectory(ext/libjxl)
+add_subdirectory(ext/libjxl EXCLUDE_FROM_ALL)
 
 # ffmpeg
 
