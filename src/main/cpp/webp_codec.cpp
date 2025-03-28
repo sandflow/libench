@@ -94,7 +94,7 @@ libench::ImageContext libench::WEBPDecoder::decode8(const CodestreamContext& cs,
       WebPDecodeRGB(cs.codestream, cs.size, &width, &height) :
       WebPDecodeRGBA(cs.codestream, cs.size, &width, &height);
 
-  if (!image_.planes8[0])
+  if (!this->image_.planes8[0])
     throw std::runtime_error("WEBP decode failed");
 
   this->image_.width = static_cast<uint32_t>(width);
