@@ -68,10 +68,6 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
 
   codestream.access_siz()
       ->access_cluster(COD_params)
-      ->set(Creversible, 0, 0, true);
-
-  codestream.access_siz()
-      ->access_cluster(COD_params)
       ->set(Corder, 0, 0, Corder_CPRL);
 
   if (this->isHT_) {
@@ -79,6 +75,15 @@ libench::CodestreamContext libench::KDUEncoder::encode(const ImageContext &image
         ->access_cluster(COD_params)
         ->set(Cmodes, 0, 0, Cmodes_HT);
   }
+
+  codestream.access_siz()
+    ->access_cluster(COD_params)
+    ->set(Catk, 0, 0, 2);
+
+  codestream.access_siz()
+    ->access_cluster(ATK_params)
+    ->access_relation(-1, -1, 2, false)
+    ->set(Kkernels, 0, 0, Kkernels_R2X2);
 
   codestream.access_siz()->finalize_all();
 
