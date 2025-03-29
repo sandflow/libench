@@ -6,6 +6,7 @@
 #include "ojph_codec.h"
 #include "png_codec.h"
 #include "qoi_codec.h"
+#include "webp_codec.h"
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -185,6 +186,9 @@ int main(int argc, char* argv[]) {
   } else if (result["codec"].as<std::string>() == "ffv1") {
     encoder.reset(new libench::FFV1Encoder());
     decoder.reset(new libench::FFV1Decoder());
+  } else if (result["codec"].as<std::string>() == "webp") {
+    encoder.reset(new libench::WEBPEncoder());
+    decoder.reset(new libench::WEBPDecoder());
   } else {
     throw std::runtime_error("Unknown encoder");
   }

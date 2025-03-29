@@ -59,6 +59,10 @@ set(JPEGXL_ENABLE_MANPAGES FALSE CACHE INTERNAL "" FORCE)
 set(JPEGXL_ENABLE_AVX512 TRUE CACHE INTERNAL "" FORCE)
 add_subdirectory(ext/libjxl EXCLUDE_FROM_ALL)
 
+# webp
+
+add_subdirectory(ext/libwebp EXCLUDE_FROM_ALL)
+
 # ffmpeg
 
 #   CONFIGURE_COMMAND ./configure --disable-avdevice --disable-avformat --disable-swresample --disable-swscale --disable-avfilter --disable-doc --disable-programs --prefix=${FFMPEG_INSTALL_DIR}
@@ -90,7 +94,7 @@ add_library(md5 ext/crypto-algorithms/md5.c)
 
 file(GLOB LIBENCH_SRC_FILES src/main/cpp/*)
 add_executable(libench ${LIBENCH_SRC_FILES} ext/lodepng/lodepng.cpp)
-target_link_libraries(libench openjph md5 avif jxl libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
+target_link_libraries(libench openjph md5 avif jxl webp libavcodec libavutil ${KDU_LIBRARY} ${CMAKE_DL_LIBS})
 
 # tests
 
@@ -110,4 +114,6 @@ add_test(NAME "png" COMMAND libench png ${PROJECT_SOURCE_DIR}/src/test/resources
 add_test(NAME "ffv1" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
 add_test(NAME "ffv1-rgba" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 add_test(NAME "ffv1-yuv" COMMAND libench ffv1 ${PROJECT_SOURCE_DIR}/src/test/resources/images/loc.720x243.yuv422p10le.yuv)
+add_test(NAME "webp-rgb" COMMAND libench webp ${PROJECT_SOURCE_DIR}/src/test/resources/images/test1.png)
+add_test(NAME "webp-rgba" COMMAND libench webp ${PROJECT_SOURCE_DIR}/src/test/resources/images/rgba.png)
 
