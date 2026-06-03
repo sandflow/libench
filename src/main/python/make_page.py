@@ -46,7 +46,7 @@ CODEC_PREFS = {
     "png": CodecInfo(color="#f2c75c", marker="o", formats=["RGBA8", "RGB8"]),
     "ffv1": CodecInfo(color="#94a596", marker="o", formats=["RGBA8", "RGB8", "YUV"]),
 #    "avif": CodecInfo(color="#5d3754", marker="o", formats=["RGBA8", "RGB8"]),
-    "webp": CodecInfo(color="#007a78", marker="o", formats=["RGBA8", "RGB8"])
+#    "webp": CodecInfo(color="#007a78", marker="o", formats=["RGBA8", "RGB8"])
 }
 
 def make_analysis(df, msg: str, fig_name: str, build_dir_path: str):
